@@ -196,121 +196,8 @@ Total iterations:  135,180
 
 ---
 
-## 4. Deep Analysis — Issues Found
 
-### Issue #1 — test_signup.js: 13,247 check failures are not real errors
-
-**Observed**: `checks_succeeded = 84.23%`, with the check `status is 202 or 208` failing 13,247 times.
-
-**Root cause**: Two factors combined:
-
-1. **Database not cleared between test runs.** k6 generates phone numbers using `9{VU_padded}{ITER_padded}` with no run-ID prefix. When `__ITER` resets on each `k6 run` invocation, VU 1 iteration 0 always generates phone `9001000000`. If this phone was registered in a previous run, `store.checkIfExists()` returns `true` and the server responds with `207 MULTI_STATUS` (not a new registration).
-
-2. **k6 check expects `208`, Spring returns `207`.** `HttpStatus.MULTI_STATUS` in Spring is `207 Multi-Status` (standard HTTP). The k6 check was written as `r.status === 208`, which never matches. So all 13,247 duplicate-collision responses (HTTP 207) fail the check.
-
-**What actually happened**: 7,757 new signups succeeded. 13,247 collided with leftover data from previous runs. Zero real errors.
-
-**Fix**:
-```javascript
-// In test_signup.js, fix the check:
-'status is 202 or 207': (r) => r.status === 202 || r.status === 207,
-
-// AND add a run-unique prefix to phone generation:
-function uniquePhone() {
-  const runId = String(Date.now()).slice(-4); // last 4 digits of epoch ms
-  const vu    = String(__VU).padStart(3, '0');
-  const iter  = String(__ITER).padStart(5, '0');
-  return `9${runId}${vu}${iter}`;
-}
-```
-
-**Alternatively**: Add `TRUNCATE TABLE registrations;` to a setup script run before each test session.
-
----
-
-### Issue #2 — test_signup.js: signup_success_rate = 100% is a false metric
-
-**Observed**: `signup_success_rate: 100.00% 7757 out of 7757`
-
-**Root cause**: The k6 Rate metric `successRate` is only incremented when status is exactly `202` (`successRate.add(1)`). The failure branches check for `status === 208` (duplicates) and `status === 500` (server errors). Spring returns `207` for duplicates and `508` for rate-limited requests — so neither `successRate.add(0)` branch ever fires. The rate becomes `7757 successes / 7757 samples = 100%`, which is mathematically correct but semantically meaningless.
-
-**Fix**:
-```javascript
-// Replace the status-based branches with:
-if (res.status === 202) {
-  signupSuccess.add(1);
-  successRate.add(1);
-} else {
-  // Covers 207 (duplicate), 508 (rate limited), 500 (server error)
-  successRate.add(0);
-  if (res.status === 207) signupDuplicate.add(1);
-  else if (res.status === 508) signupRateLimited.add(1);
-  else if (res.status === 500) signupFail.add(1);
-}
-```
-
----
-
-### Issue #3 — test_signup.js: handleSummary TypeError at line 136
-
-**Observed**: `TypeError: Cannot read property 'toFixed' of undefined or null`
-
-**Root cause**: The summary handler accesses `data.metrics.http_req_duration.values['p(99)']` but k6's summary data structure uses `'p(99)'` as a key that may not exist in all k6 versions, or the path is accessed incorrectly.
-
-**Fix**:
-```javascript
-// Add a safe accessor helper:
-function safeStat(metrics, name, stat) {
-  const m = metrics[name];
-  if (!m || !m.values) return 'N/A';
-  const v = m.values[stat];
-  return v != null ? v.toFixed(1) : 'N/A';
-}
-
-// Use in summary:
-console.log(`p(99) latency: ${safeStat(data.metrics, 'http_req_duration', 'p(99)')}ms`);
-```
-
----
-
-### Issue #4 — All tests: Unique time series explosion in k6
-
-**Observed**:
-- test_token_login.js: 1,600,022 unique time series
-- test_full_system.js soak: 400,021 unique time series
-- test_full_system.js mixed: 100,105 unique time series
-
-**Root cause**: k6 tracks metrics per unique URL. The endpoints `/users/token/{username}/{phone}` and `/users/login/{token}/{phone}` have unique path parameters on every request. k6 treats each unique URL as a separate metric stream, leading to memory explosion.
-
-**Fix**: Tag requests with a template name so k6 groups all variants under a single metric stream:
-
-```javascript
-// In test_token_login.js and test_full_system.js, add a name tag:
-const res = http.post(
-  `${BASE_URL}/users/token/${username}/${phone}`,
-  null,
-  {
-    timeout: '5s',
-    tags: { name: 'POST /users/token' }   // ← add this
-  }
-);
-
-// Similarly for login:
-const res = http.post(
-  `${BASE_URL}/users/login/${token}/${phone}`,
-  null,
-  {
-    timeout: '5s',
-    tags: { name: 'POST /users/login' }   // ← add this
-  }
-);
-```
-
-This reduces unique time series from millions to exactly one per endpoint — the recommended approach for any URL with path parameters.
-
----
-
-## 5. System Behaviour Conclusions
+## 4. System Behaviour Conclusions
 
 ### BCrypt performance on localhost
 
@@ -334,7 +221,7 @@ The 200 VU spike test shows zero latency increase during the burst and zero reco
 
 ---
 
-## 6. What the RPS Numbers Actually Mean
+## 5. What the RPS Numbers Actually Mean
 
 The script prints `"Phase II limits exceeded"` when RPS > 80. This threshold was written for a **production single-instance server**, not a developer laptop.
 
@@ -350,7 +237,7 @@ For production capacity planning, the relevant question is: at what concurrent u
 
 ---
 
-## 7. Test Script Bugs to Fix
+## 6. Test Script Bugs to Fix
 
 Summary of all fixes required:
 
@@ -366,7 +253,7 @@ Summary of all fixes required:
 
 ---
 
-## 8. Phase II → Phase III Migration Signals
+## 7. Phase II → Phase III Migration Signals
 
 Based on these results, the following signals would trigger a Phase III upgrade decision:
 
@@ -388,7 +275,7 @@ The primary Phase III changes this service will need when the signals appear:
 
 ---
 
-## 9. Recommendations
+## 8. Recommendations
 
 **Immediate (test hygiene)**:
 1. Fix the 4 bugs in test scripts listed in §7 before the next test run
@@ -418,7 +305,3 @@ The primary Phase III changes this service will need when the signals appear:
 | Signup isolation | 21,004 | 149.9 | 224ms | — | — | 0.00% |
 | Token+Login | 135,180 | ~965 iter/s | — | 5ms | 3ms | 0.00% |
 | **Total** | **258,604** | — | — | — | — | **0.00%** |
-
----
-
-*This report covers Phase II load testing only. Phase III test plan to be authored once migration triggers in §8 are observed in production.*
