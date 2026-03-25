@@ -1,14 +1,5 @@
 # WhatsApp Auth Service — Phase II Load Test Report
 
-**Component**: Authentication Sub-Service  
-**Phase**: II (10–100 users)  
-**Test Environment**: MacBook Pro (localhost), Spring Boot 3.x, MySQL 8.x  
-**Test Tool**: k6  
-**Date**: March 2026  
-**Author**: Vishu Kalier
-
----
-
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
@@ -19,12 +10,11 @@
    - 3.3 test_full_system.js — Spike
    - 3.4 test_signup.js
    - 3.5 test_token_login.js
-4. [Deep Analysis — Issues Found](#4-deep-analysis--issues-found)
-5. [System Behaviour Conclusions](#5-system-behaviour-conclusions)
-6. [What the RPS Numbers Actually Mean](#6-what-the-rps-numbers-actually-mean)
-7. [Test Script Bugs to Fix](#7-test-script-bugs-to-fix)
-8. [Phase II → Phase III Migration Signals](#8-phase-ii--phase-iii-migration-signals)
-9. [Recommendations](#9-recommendations)
+4. [System Behaviour Conclusions](#5-system-behaviour-conclusions)
+5. [What the RPS Numbers Actually Mean](#5-what-the-rps-numbers-actually-mean)
+6. [Test Script Bugs to Fix](#6-test-script-bugs-to-fix)
+7. [Phase II → Phase III Migration Signals](#7-phase-ii--phase-iii-migration-signals)
+8. [Recommendations](#8-recommendations)
 
 ---
 
