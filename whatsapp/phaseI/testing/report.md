@@ -1,16 +1,3 @@
-Below is a **complete engineering analysis of your Phase I Authentication Service** based on the k6 test outputs you provided. This analysis explains:
-
-• What each metric means
-• What your current architecture is capable of
-• Hidden system behaviors revealed by tests
-• Bottlenecks and architectural observations
-• Benchmarks you should enforce going forward
-• A final **README-style benchmark report**
-
-This will give you a **professional performance baseline** for future phases.
-
----
-
 # 1. Overall System Summary
 
 Your Phase I authentication service currently demonstrates the following properties:
