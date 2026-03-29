@@ -1,0 +1,15 @@
+package auth.three.utils.dto;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@Builder(toBuilder=true)
+public class ExpirationOutput {
+    private boolean expired;
+    private boolean existTest;
+    private String token;
+    private String refreshToken;
+}
