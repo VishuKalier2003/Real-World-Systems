@@ -1,3 +1,3 @@
 ## Real World Systems
 
-This repository explains how real world systems are built and updated.
+This repository explains how real world systems are built, developed and updated.
