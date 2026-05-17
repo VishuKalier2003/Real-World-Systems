@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uber System Design - Phase-wise Architecture Learning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        uber: {
+                            black: '#000000',
+                            dark: '#1a1a1a',
+                            gray: '#2d2d2d',
+                            green: '#3e8e41',
+                            accent: '#276ef1',
+                            surface: '#121212',
+                            card: '#1e1e1e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0a0a0a; color: #e5e5e5; font-family: 'Inter', sans-serif; }
+        .phase-tab { transition: all 0.3s ease; }
+        .phase-tab.active { background: linear-gradient(135deg, #276ef1 0%, #1e5bc4 100%); box-shadow: 0 4px 20px rgba(39, 110, 241, 0.3); }
+        .component-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .component-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-color: #276ef1; }
+        .carousel-container { scroll-behavior: smooth; scrollbar-width: none; }
+        .carousel-container::-webkit-scrollbar { display: none; }
+        .mermaid { background: transparent !important; }
+        .mermaid svg { max-width: 100%; height: auto; }
+        .type-badge { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+        .typing-effect { border-right: 2px solid #276ef1; animation: blink 1s infinite; }
+        @keyframes blink { 50% { border-color: transparent; } }
+        .gradient-text { background: linear-gradient(135deg, #fff 0%, #276ef1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .architecture-box { background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%); border: 1px solid #333; }
+        .pulse-ring { animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+        @keyframes pulse-ring { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(39, 110, 241, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(39, 110, 241, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(39, 110, 241, 0); } }
+        .scroll-indicator { animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
+        .grid-bg { background-image: radial-gradient(circle at 1px 1px, #333 1px, transparent 0); background-size: 40px 40px; }
+        .question-card { border-left: 3px solid #276ef1; transition: all 0.3s ease; }
+        .question-card:hover { border-left-width: 6px; background: #1a1a1a; }
+        .answer-section { background: linear-gradient(180deg, #121212 0%, #0a0a0a 100%); }
+        .highlight-box { background: rgba(39, 110, 241, 0.1); border: 1px solid rgba(39, 110, 241, 0.3); }
+    </style>
+<base target="_blank">
+</head>
+<body class="antialiased">
+    <!-- Hero Section -->
+    <div class="relative min-h-[60vh] flex items-center justify-center overflow-hidden grid-bg">
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0a0a]"></div>
+        <div class="relative z-10 text-center px-4 max-w-5xl mx-auto">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span class="text-xs font-mono text-gray-400">System Design Masterclass</span>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+                <span class="gradient-text">Uber Architecture</span>
+            </h1>
+            <p class="text-xl text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed">
+                Phase-wise microservices evolution from <span class="text-white font-semibold">0 → 1,000,000 users</span>. 
+                Interactive component carousel, deep-dive design problems, and Google-level architect solutions.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 text-sm font-mono text-gray-500">
+                <span class="px-3 py-1 border border-gray-800 rounded">Phase I: MVP</span>
+                <span class="px-3 py-1 border border-gray-800 rounded">Phase III: Scale</span>
+                <span class="px-3 py-1 border border-gray-800 rounded">Phase VI: Global</span>
+            </div>
+        </div>
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 scroll-indicator">
+            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+        </div>
+    </div>
+
+    <!-- Phase Navigation -->
+    <div class="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex gap-2 overflow-x-auto carousel-container pb-2" id="phaseTabs">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 py-12">
+
+        <!-- Component Carousel Section -->
+        <div class="mb-20">
+            <div class="flex items-end justify-between mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2">Microservices Evolution</h2>
+                    <p class="text-gray-400">Click any phase above to filter. Hover cards for details. <span class="text-uber-accent">Blue border = New in this phase</span></p>
+                </div>
+                <div class="hidden md:flex gap-2">
+                    <button onclick="scrollCarousel(-1)" class="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+                    <button onclick="scrollCarousel(1)" class="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="componentGrid">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex flex-wrap gap-4 mb-16 p-6 bg-uber-card rounded-xl border border-gray-800">
+            <span class="text-sm font-semibold text-gray-400 mr-2">Component Types:</span>
+            <span class="type-badge px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30">Core</span>
+            <span class="type-badge px-2 py-1 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">Infrastructure</span>
+            <span class="type-badge px-2 py-1 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">Analytics</span>
+            <span class="type-badge px-2 py-1 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Business</span>
+            <span class="type-badge px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30">Feature</span>
+            <span class="type-badge px-2 py-1 rounded bg-gray-500/20 text-gray-400 border border-gray-500/30">Monitoring</span>
+        </div>
+
+        <!-- KILLER SECTION: Phase I Deep Dive -->
+        <div class="border-t border-gray-800 pt-16">
+            <div class="text-center mb-12">
+                <div class="inline-block px-4 py-1 bg-uber-accent/10 text-uber-accent rounded-full text-sm font-bold mb-4 border border-uber-accent/30">KILLER PROMPT EXAMPLE</div>
+                <h2 class="text-4xl font-bold text-white mb-4">Phase I Deep Dive: Ride Matching Engine</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">Demonstration of the interview-style problem statement, architecture design, and expert answers. <br><span class="text-sm text-gray-500">(Request other Phase+Component combinations in your next message)</span></p>
+            </div>
+
+            <!-- 0. Problem Statement -->
+            <div class="mb-12">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-uber-accent flex items-center justify-center text-white font-bold text-lg">0</div>
+                    <h3 class="text-2xl font-bold text-white">Interview Problem Statement</h3>
+                </div>
+                <div class="bg-uber-card rounded-xl border border-gray-800 p-8">
+                    <div class="prose prose-invert max-w-none">
+                        <div class="highlight-box rounded-lg p-6 mb-6">
+                            <p class="text-lg leading-relaxed text-gray-300 font-medium">
+                                "Design the core ride-hailing matching system for a new Uber-like service launching in a single city. 
+                                The system must handle <span class='text-white font-bold'>riders requesting trips</span> and <span class='text-white font-bold'>drivers accepting them</span> in near real-time. 
+                                We expect 10 concurrent users initially (5 riders, 5 drivers), but the architecture must not preclude future scaling. 
+                                Riders should see available drivers nearby, request a ride, get matched with the optimal driver, track the trip, and complete payment. 
+                                Drivers should go online, receive match notifications, navigate to pickup, and mark trip states. 
+                                You have 45 minutes. Design the data model, API contracts, state machine, and deployment architecture. 
+                                Highlight consistency requirements, failure modes, and why you choose synchronous vs asynchronous communication."
+                            </p>
+                        </div>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div class="bg-black/30 rounded-lg p-4 border border-gray-800">
+                                <div class="text-uber-accent font-bold mb-2">Must Design</div>
+                                <ul class="text-sm text-gray-400 space-y-1">
+                                    <li>• Matching algorithm (naive → optimal)</li>
+                                    <li>• State machine (Rider/Driver/Trip)</li>
+                                    <li>• Data schema & persistence</li>
+                                    <li>• API contracts (REST/WebSocket)</li>
+                                </ul>
+                            </div>
+                            <div class="bg-black/30 rounded-lg p-4 border border-gray-800">
+                                <div class="text-yellow-500 font-bold mb-2">Must Discuss</div>
+                                <ul class="text-sm text-gray-400 space-y-1">
+                                    <li>• CAP theorem trade-offs</li>
+                                    <li>• Idempotency & double-submit</li>
+                                    <li>• Driver location staleness</li>
+                                    <li>• Split-brain in matching</li>
+                                </ul>
+                            </div>
+                            <div class="bg-black/30 rounded-lg p-4 border border-gray-800">
+                                <div class="text-green-500 font-bold mb-2">Must Avoid</div>
+                                <ul class="text-sm text-gray-400 space-y-1">
+                                    <li>• Premature microservices</li>
+                                    <li>• Over-engineered queues</li>
+                                    <li>• Ignoring network partitions</li>
+                                    <li>• Missing idempotency keys</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. Architecture Diagram as Problem -->
+            <div class="mb-12">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-uber-accent flex items-center justify-center text-white font-bold text-lg">1</div>
+                    <h3 class="text-2xl font-bold text-white">Subsystem Architecture Problem</h3>
+                </div>
+                <div class="bg-uber-card rounded-xl border border-gray-800 p-8">
+                    <p class="text-gray-400 mb-6">Study this diagram. Identify the single points of failure, consistency boundaries, and scalability bottlenecks before reading the analysis.</p>
+                    <div class="mermaid bg-black/20 rounded-lg p-4">
+graph TB
+    subgraph "Client Layer"
+        R[Rider App]
+        D[Driver App]
+    end
+
+    subgraph "Gateway Layer"
+        LB[Load Balancer<br/>Nginx]
+        AG[API Gateway<br/>Rate Limit: 100/min]
+    end
+
+    subgraph "Service Layer"
+        US[User Service<br/>Port: 8081]
+        RM[Ride Matcher<br/>Port: 8082]
+        TM[Trip Manager<br/>Port: 8083]
+        NS[Notification Service<br/>Port: 8084]
+    end
+
+    subgraph "Data Layer"
+        PG[(PostgreSQL<br/>Single Instance)]
+        REDIS[(Redis<br/>Session + Cache)]
+    end
+
+    R -->|HTTPS/JSON| LB
+    D -->|HTTPS/JSON| LB
+    LB --> AG
+    AG --> US
+    AG --> RM
+    AG --> TM
+    RM -->|"Write Trip State"| PG
+    TM -->|"Read/Write Trips"| PG
+    US -->|"Auth + Profiles"| PG
+    RM -->|"Lock Driver"| REDIS
+    TM -->|"Pub/Sub State"| REDIS
+    RM -->|"SMS/Email"| NS
+    TM -->|"Push Events"| NS
+
+    style RM fill:#276ef1,stroke:#fff,stroke-width:2px,color:#fff
+    style PG fill:#e74c3c,stroke:#c0392b,stroke-width:2px,color:#fff
+    style REDIS fill:#e67e22,stroke:#d35400,stroke-width:2px,color:#fff
+                    </div>
+                    <div class="mt-6 grid md:grid-cols-2 gap-4">
+                        <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                            <h4 class="text-red-400 font-bold mb-2">🚨 Critical Design Flaws to Spot</h4>
+                            <ul class="text-sm text-gray-300 space-y-2">
+                                <li>• <span class="text-white">Ride Matcher talks directly to DB</span> — creates tight coupling and horizontal scaling issues.</li>
+                                <li>• <span class="text-white">Single PostgreSQL instance</span> — is a single point of failure; no read replicas.</li>
+                                <li>• <span class="text-white">Redis used for driver locking</span> — if Redis fails, matching stops. No fallback.</li>
+                                <li>• <span class="text-white">Synchronous SMS in critical path</span> — NS failure blocks trip creation.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                            <h4 class="text-green-400 font-bold mb-2">✅ Correct Design Decisions</h4>
+                            <ul class="text-sm text-gray-300 space-y-2">
+                                <li>• <span class="text-white">API Gateway centralizes auth/routing</span> — allows future service mesh insertion.</li>
+                                <li>• <span class="text-white">Redis for session + pub/sub</span> — correct for 10 users, but needs Sentinel.</li>
+                                <li>• <span class="text-white">Trip Manager separate from Matcher</span> — separates lifecycle from allocation.</li>
+                                <li>• <span class="text-white">Notification Service isolated</span> — allows async conversion later.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Interview Questions -->
+            <div class="mb-12">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-uber-accent flex items-center justify-center text-white font-bold text-lg">2</div>
+                    <h3 class="text-2xl font-bold text-white">Architect Must-Answer Questions</h3>
+                </div>
+                <div class="space-y-3" id="questionList">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+
+            <!-- 3. Full Architecture Diagram -->
+            <div class="mb-12">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-uber-accent flex items-center justify-center text-white font-bold text-lg">3</div>
+                    <h3 class="text-2xl font-bold text-white">Complete Phase I Architecture</h3>
+                </div>
+                <div class="bg-uber-card rounded-xl border border-gray-800 p-8">
+                    <div class="mermaid">
+graph TB
+    subgraph "Presentation Layer"
+        RA[Rider App<br/>React Native]
+        DA[Driver App<br/>React Native]
+        AD[Admin Dashboard<br/>React]
+    end
+
+    subgraph "Edge Layer"
+        DNS[DNS/Route53]
+        CDN[CloudFront CDN<br/>Static Assets]
+        LB[Nginx Load Balancer<br/>Round Robin]
+    end
+
+    subgraph "Gateway & Coordination"
+        AG[API Gateway<br/>Kong/AWS API GW]
+        AUTH[Auth Middleware<br/>JWT Validation]
+        RL[Rate Limiter<br/>Redis Cell]
+    end
+
+    subgraph "Core Services"
+        US[User Service<br/>Go/Gin]
+        RM[Ride Matching Engine<br/>Go/Gin + Goroutines]
+        TM[Trip Manager<br/>Go/Gin]
+        PS[Payment Service<br/>Stripe SDK]
+        NS[Notification Service<br/>Go + Twilio]
+    end
+
+    subgraph "Data & Messaging"
+        PG[(PostgreSQL 14<br/>Primary + Replica)]
+        RS[(Redis 7<br/>Sessions + Geo)]
+        S3[AWS S3<br/>Documents/Images]
+        QUEUE[In-Memory Queue<br/>Go Channels]
+    end
+
+    subgraph "External APIs"
+        MAPS[Google Maps API<br/>Geocoding + Routes]
+        STRIPE[Stripe API<br/>Payment Processing]
+        SMS[Twilio<br/>SMS Gateway]
+    end
+
+    subgraph "Observability"
+        LOG[Structured Logging<br/>Zap + ELK]
+        MET[Prometheus<br/>Metrics]
+    end
+
+    RA -->|HTTPS| DNS
+    DA -->|HTTPS| DNS
+    AD -->|HTTPS| DNS
+    DNS --> CDN
+    DNS --> LB
+    LB --> AG
+    AG --> AUTH
+    AUTH --> RL
+    RL --> US
+    RL --> RM
+    RL --> TM
+
+    US -->|"CRUD Users"| PG
+    RM -->|"Query/Update Trips"| PG
+    TM -->|"Trip Lifecycle"| PG
+    RM -->|"Driver Location"| RS
+    TM -->|"State Pub/Sub"| RS
+
+    RM -->|"Async Events"| QUEUE
+    QUEUE -->|"Process Later"| NS
+    QUEUE -->|"Reconcile"| PS
+
+    US -->|"Store KYC"| S3
+    TM -->|"Route Calculation"| MAPS
+    PS -->|"Charge Card"| STRIPE
+    NS -->|"Send SMS"| SMS
+
+    US -->|"Metrics"| MET
+    RM -->|"Metrics"| MET
+    TM -->|"Metrics"| MET
+
+    style RM fill:#276ef1,stroke:#fff,stroke-width:3px,color:#fff
+    style PG fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    style RS fill:#e67e22,stroke:#d35400,stroke-width:2px,color:#fff
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Completion Checklist -->
+            <div class="mb-12">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-uber-accent flex items-center justify-center text-white font-bold text-lg">5</div>
+                    <h3 class="text-2xl font-bold text-white">Phase I Completion Checklist</h3>
+                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-uber-card rounded-xl border border-gray-800 p-6">
+                        <h4 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-uber-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Design Artifacts
+                        </h4>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-uber-accent"><span class="text-gray-300 text-sm">Architecture Decision Records (ADRs) for DB choice, sync vs async</span></li>
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-uber-accent"><span class="text-gray-300 text-sm">Entity-Relationship Diagram (ERD) with all tables, indexes, constraints</span></li>
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-uber-accent"><span class="text-gray-300 text-sm">API Specification (OpenAPI 3.0) for all endpoints with error schemas</span></li>
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-uber-accent"><span class="text-gray-300 text-sm">State Machine Diagram (Trip: REQUESTED→MATCHED→PICKED_UP→COMPLETED)</span></li>
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-uber-accent"><span class="text-gray-300 text-sm">Sequence Diagrams for: Request Ride, Match Driver, Complete Trip</span></li>
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-uber-accent"><span class="text-gray-300 text-sm">Data Flow Diagram (DFD) showing PII boundaries</span></li>
+                        </ul>
+                    </div>
+                    <div class="bg-uber-card rounded-xl border border-gray-800 p-6">
+                        <h4 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Knowledge Validation
+                        </h4>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-green-500"><span class="text-gray-300 text-sm">Explain why PostgreSQL over MongoDB for financial/transactional data</span></li>
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-green-500"><span class="text-gray-300 text-sm">Calculate DB connection pool size: (10 users × 5 req/s × 50ms) / 1000</span></li>
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-green-500"><span class="text-gray-300 text-sm">Define retry strategy with exponential backoff for Stripe API calls</span></li>
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-green-500"><span class="text-gray-300 text-sm">Document failure modes: DB down, Redis down, Stripe timeout</span></li>
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-green-500"><span class="text-gray-300 text-sm">Security review: SQL injection prevention, XSS, CSRF on admin dashboard</span></li>
+                            <li class="flex items-start gap-3"><input type="checkbox" checked class="mt-1 accent-green-500"><span class="text-gray-300 text-sm">Cost estimation: AWS t3.micro × 3, RDS db.t3.micro, ElastiCache cache.t3.micro</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Expert Answers -->
+            <div class="mb-12">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-lg bg-uber-accent flex items-center justify-center text-white font-bold text-lg">6</div>
+                    <h3 class="text-2xl font-bold text-white">Google Principal Architect Answers</h3>
+                    <span class="text-xs bg-gray-800 text-gray-400 px-3 py-1 rounded-full border border-gray-700">20+ Years Experience</span>
+                </div>
+                <div class="space-y-6" id="answerSection">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="border-t border-gray-800 pt-8 text-center text-gray-600 text-sm">
+            <p>Interactive System Design Learning Environment • Generated for Uber Architecture Study</p>
+            <p class="mt-2">Request any Phase + Component combination in your next message for the same deep-dive treatment.</p>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        const phases = [
+            { id: 'I', range: '0 → 10', title: 'MVP', color: 'from-gray-700 to-gray-600', desc: 'Monolith-first, single-region' },
+            { id: 'II', range: '10 → 100', title: 'Validation', color: 'from-blue-900 to-blue-800', desc: 'Services split, caching layer' },
+            { id: 'III', range: '100 → 1K', title: 'Traction', color: 'from-indigo-900 to-indigo-800', desc: 'Async queues, search, batch analytics' },
+            { id: 'IV', range: '1K → 10K', title: 'Growth', color: 'from-purple-900 to-purple-800', desc: 'Surge pricing, real-time monitoring' },
+            { id: 'V', range: '10K → 100K', title: 'Scale', color: 'from-pink-900 to-pink-800', desc: 'Event streaming, ML, multi-region' },
+            { id: 'VI', range: '100K → 1M', title: 'Global', color: 'from-red-900 to-red-800', desc: 'Edge computing, custom maps, mesh' }
+        ];
+
+        const components = [
+            // Phase I
+            { phase: 'I', name: 'API Gateway', type: 'Infrastructure', new: true, what: 'Single entry point routing requests to appropriate backend services with auth and rate limiting.', why: 'Decouples clients from service topology, enabling independent scaling and deployment of microservices.', problems: 'Eliminates direct client-to-service coupling, provides centralized SSL termination, request validation, and prevents cascade failures through circuit breaking.' },
+            { phase: 'I', name: 'User Service', type: 'Core', new: true, what: 'Manages authentication, authorization, profile data for riders, drivers, and admin personas.', why: 'Identity is a cross-cutting concern; isolating it prevents auth logic duplication across all services.', problems: 'Solves session management, password hashing, KYC document storage, and role-based access control without polluting business logic services.' },
+            { phase: 'I', name: 'Ride Matching Engine', type: 'Core', new: true, what: 'Core algorithm matching ride requests to nearest available drivers using location and availability.', why: 'The heart of Uber; separating it allows independent optimization, A/B testing, and geo-spatial scaling.', problems: 'Solves optimal allocation minimizing wait times, prevents double-booking drivers, and handles concurrent request race conditions.' },
+            { phase: 'I', name: 'Trip Manager', type: 'Core', new: true, what: 'Orchestrates entire trip lifecycle from request through pickup, driving, drop-off, and completion.', why: 'Trip state machine complexity warrants isolation from matching logic to ensure data consistency and auditability.', problems: 'Solves state transition integrity, fare calculation triggering, receipt generation, and historical trip record immutability.' },
+            { phase: 'I', name: 'Notification Service', type: 'Feature', new: true, what: 'Sends transactional alerts via SMS, email, and push for trip status updates and promotions.', why: 'Delivery mechanisms change frequently; isolation allows swapping Twilio for Firebase without touching core logic.', problems: 'Solves reliable delivery retries, template management, regulatory compliance for marketing comms, and channel preference routing.' },
+            { phase: 'I', name: 'PostgreSQL Primary', type: 'Infrastructure', new: true, what: 'Primary relational database storing users, trips, payments with ACID guarantees and row-level locking.', why: 'Financial transactions demand strong consistency; Postgres provides MVCC, JSON support, and mature tooling.', problems: 'Solves data durability, complex relational queries, referential integrity, and transactional rollback during payment failures.' },
+            { phase: 'I', name: 'Client Apps', type: 'Feature', new: true, what: 'React Native mobile apps for riders and drivers consuming REST APIs and WebSocket updates.', why: 'User interface evolution is decoupled from backend, allowing separate release cycles for iOS and Android.', problems: 'Solves cross-platform code reuse, real-time location streaming, offline mode for driver earnings, and map rendering.' },
+
+            // Phase II
+            { phase: 'II', name: 'Driver Location Service', type: 'Core', new: true, what: 'Ingests GPS telemetry every 5 seconds and serves geospatial queries for nearby driver discovery.', why: 'High-write workload differs from read-heavy user data; needs specialized geospatial indexing and TTL strategies.', problems: 'Solves massive write throughput, location staleness tolerance, geohash precision tuning, and battery optimization on driver devices.' },
+            { phase: 'II', name: 'Pricing Service', type: 'Business', new: true, what: 'Calculates dynamic base fares using distance, time, vehicle type, and basic demand signals.', why: 'Pricing logic changes frequently with market conditions; isolating it enables rapid promotion and fare rule updates.', problems: 'Solves fare quote accuracy, currency conversion, toll and airport fee inclusion, and upfront vs metered pricing models.' },
+            { phase: 'II', name: 'Payment Service', type: 'Business', new: true, what: 'Processes card vaulting, charging, refunds, and driver payouts through Stripe Connect integration.', why: 'PCI compliance scope reduction; isolating payment logic limits audit surface and card data exposure.', problems: 'Solves PCI DSS compliance, idempotent charging, split payments between platform and driver, and failed transaction reconciliation.' },
+            { phase: 'II', name: 'Redis Cache', type: 'Infrastructure', new: true, what: 'In-memory store for sessions, rate limit counters, and temporary driver location hot spots.', why: 'Offloads read pressure from PostgreSQL and provides sub-millisecond access for frequently queried ephemeral data.', problems: 'Solves database read replica lag, session horizontal scaling, thundering herd on popular routes, and temporary compute offload.' },
+            { phase: 'II', name: 'Object Storage', type: 'Infrastructure', new: true, what: 'S3-compatible store for driver license images, vehicle insurance docs, and rider profile photos.', why: 'Binary large objects do not belong in relational databases; separation prevents table bloat and backup inflation.', problems: 'Solves infinite storage scaling, CDN origin serving, image resizing pipelines, and GDPR data deletion for uploaded documents.' },
+            { phase: 'II', name: 'Admin Dashboard', type: 'Feature', new: true, what: 'Internal React web app for support agents to view trips, issue refunds, and manage driver onboarding.', why: 'Internal tools have different auth patterns and data access rules than consumer APIs, warranting separate deployment.', problems: 'Solves operational visibility, manual intervention for stuck trips, fraud investigation, and driver document verification workflows.' },
+
+            // Phase III
+            { phase: 'III', name: 'Dispatch Service', type: 'Core', new: true, what: 'Intelligent driver assignment using supply-demand heatmaps and driver preference filters beyond naive proximity.', why: 'Matching scales differently from dispatch; separation allows supply forecasting and batch optimization algorithms.', problems: 'Solves driver utilization maximization, destination filter matching, consecutive trip chaining, and supply positioning recommendations.' },
+            { phase: 'III', name: 'Route Service', type: 'Core', new: true, what: 'Integrates mapping APIs for ETA calculation, turn-by-turn navigation, and route polyline generation.', why: 'External API costs and rate limits need isolation; also enables future swap to internal mapping engine.', problems: 'Solves Google Maps API cost control, route caching for repeated origins, traffic-aware ETA accuracy, and navigation deep-linking.' },
+            { phase: 'III', name: 'Rating Service', type: 'Feature', new: true, what: 'Collects and aggregates rider-driver ratings, tags, and feedback post-trip with anti-gaming measures.', why: 'Write-heavy aggregate workloads differ from transactional trip data; needs separate sharding and batch recalculation.', problems: 'Solves rating fraud detection, weighted average algorithms, driver deactivation thresholds, and feedback sentiment analysis storage.' },
+            { phase: 'III', name: 'Analytics Pipeline', type: 'Analytics', new: true, what: 'Batch ETL extracting trip, user, and revenue data into warehouse for business intelligence reports.', why: 'Analytical queries scan huge datasets and would cripple transactional databases; separation ensures OLTP performance.', problems: 'Solves business KPI tracking, city-level growth metrics, driver earnings analytics, and investor reporting without impacting production.' },
+            { phase: 'III', name: 'Message Queue', type: 'Infrastructure', new: true, what: 'RabbitMQ or SQS handling async tasks like receipt generation, email dispatch, and payment reconciliation.', why: 'Decouples producers from consumers, allowing backpressure handling and independent scaling of background workers.', problems: 'Solves spike absorption during peak hours, guaranteed delivery at-least-once, dead letter queues for failed payments, and service decoupling.' },
+            { phase: 'III', name: 'Search Service', type: 'Infrastructure', new: true, what: 'Elasticsearch indexing for autocomplete location search, POI discovery, and saved places retrieval.', why: 'Full-text and geo-search queries require inverted indexes and analyzers unsuitable for relational database B-trees.', problems: 'Solves fuzzy address matching, multi-language support, nearby POI ranking, and rapid autocomplete under 50ms latency.' },
+            { phase: 'III', name: 'Fraud Rules Engine', type: 'Business', new: true, what: 'Real-time rule evaluation detecting stolen cards, fake GPS, driver-rider collusion through heuristic patterns.', why: 'Fraud logic evolves daily; isolation allows instant rule deployment without restarting core transaction services.', problems: 'Solves chargeback prevention, fake account creation blocking, location spoofing detection, and promotional code abuse in real-time.' },
+
+            // Phase IV
+            { phase: 'IV', name: 'Surge Pricing Engine', type: 'Business', new: true, what: 'Real-time algorithm adjusting prices based on supply-demand imbalance, weather, and event data every 5 minutes.', why: 'Computationally intensive geospatial aggregation must not block fare quote API; needs isolated compute cluster.', problems: 'Solves demand elasticity monetization, driver supply incentivization, price gouging prevention, and dynamic geofence definition.' },
+            { phase: 'IV', name: 'Push Notification Service', type: 'Feature', new: true, what: 'Dedicated service managing APNs and FCM token registration, batch sending, and delivery tracking.', why: 'Push infrastructure has unique retry logic, token invalidation handling, and battery-aware batching requirements.', problems: 'Solves device token rotation, notification batching for driver offers, rich media attachments, and delivery receipt tracking.' },
+            { phase: 'IV', name: 'Prometheus/Grafana', type: 'Monitoring', new: true, what: 'Metrics collection, alerting, and visualization for all services covering latency, errors, traffic, and saturation.', why: 'Observability is a first-class system component; standardized metrics enable rapid incident response and capacity planning.', problems: 'Solves production debugging, SLO tracking, anomaly detection, distributed trace correlation, and on-call alert fatigue reduction.' },
+            { phase: 'IV', name: 'Data Warehouse', type: 'Analytics', new: true, what: 'Snowflake or BigQuery storing petabytes of historical trip, clickstream, and financial data for analysis.', why: 'Columnar storage and massive parallelism for analytics is cost-prohibitive in OLTP systems; separation optimizes both.', problems: 'Solves ad-hoc business querying, machine learning feature backfills, regulatory audit trails, and cross-region data consolidation.' },
+            { phase: 'IV', name: 'CDN', type: 'Infrastructure', new: true, what: 'Global edge cache for static assets, route polylines, and driver profile images reducing origin load.', why: 'Geographic distribution of content minimizes latency and bandwidth costs for repeated static resource requests.', problems: 'Solves global latency reduction, origin bandwidth cost control, DDoS absorption, and TLS termination near users.' },
+            { phase: 'IV', name: 'IAM Service', type: 'Infrastructure', new: true, what: 'Fine-grained authorization using RBAC and ABAC for internal tools, third-party APIs, and partner dashboards.', why: 'Centralized policy management prevents authorization logic sprawl and enables unified audit logging across all services.', problems: 'Solves principle of least privilege, cross-service permission propagation, temporary elevated access, and compliance access reporting.' },
+            { phase: 'IV', name: 'Support Ticketing', type: 'Feature', new: true, what: 'Customer support platform integrating trip data, messaging, and refund workflows for agent efficiency.', why: 'Support workflows integrate multiple backends; isolation provides a unified agent interface without direct service coupling.', problems: 'Solves ticket routing by category, automated refund approval thresholds, driver dispute tracking, and CSAT measurement.' },
+
+            // Phase V
+            { phase: 'V', name: 'Event Streaming', type: 'Infrastructure', new: true, what: 'Kafka cluster handling millions of events per second for trip lifecycle, location, and payment streams.', why: 'Log-based pub/sub enables replay, multiple consumers, and event sourcing; replaces point-to-point REST choreography.', problems: 'Solves event ordering guarantees, exactly-once processing, schema evolution with Registry, and cross-service data consistency.' },
+            { phase: 'V', name: 'ML Platform', type: 'Analytics', new: true, what: 'Training and serving infrastructure for ETA prediction, demand forecasting, and route optimization models.', why: 'ML workloads require GPU clusters, feature stores, and model versioning distinct from transactional serving paths.', problems: 'Solves prediction latency under 100ms, model A/B testing, feature drift detection, and automated retraining pipelines.' },
+            { phase: 'V', name: 'Service Mesh', type: 'Infrastructure', new: true, what: 'Istio or Linkerd providing mTLS, traffic splitting, retries, and observability without code changes.', why: 'Cross-cutting concerns like encryption and canary deployments should not be implemented in every service individually.', problems: 'Solves zero-trust security, blue-green deployments, automatic retry with backoff, and multi-language service interoperability.' },
+            { phase: 'V', name: 'Multi-Region Deploy', type: 'Infrastructure', new: true, what: 'Active-active deployment across continents with data residency compliance and regional failover capabilities.', why: 'Single-region deployment creates latency for global users and violates data sovereignty laws like GDPR.', problems: 'Solves sub-200ms API latency worldwide, compliance with data residency, regional disaster recovery, and traffic geo-routing.' },
+            { phase: 'V', name: 'Advanced Fraud ML', type: 'Business', new: true, what: 'Anomaly detection models using graph neural networks to identify collusion rings and synthetic identity fraud.', why: 'Rule-based systems fail at sophisticated fraud; ML models detect subtle behavioral patterns across millions of trips.', problems: 'Solves organized collusion detection, account takeover prevention, synthetic identity KYC bypass, and real-time risk scoring.' },
+            { phase: 'V', name: 'Real-time Analytics', type: 'Analytics', new: true, what: 'Flink or Spark Streaming processing live events for operational dashboards and immediate business decisions.', why: 'Batch analytics has hours of latency; streaming enables real-time surge detection and supply repositioning commands.', problems: 'Solves live city health monitoring, instant revenue tracking, real-time fraud intervention, and operational command center feeds.' },
+            { phase: 'V', name: 'Chaos Engineering', type: 'Monitoring', new: true, what: 'Automated failure injection testing resilience through random instance termination, latency injection, and DNS chaos.', why: 'Proving reliability requires empirical evidence; chaos experiments validate auto-scaling, circuit breakers, and failover logic.', problems: 'Solves hidden dependency discovery, auto-scaling policy validation, on-call runbook verification, and blast radius containment confidence.' },
+
+            // Phase VI
+            { phase: 'VI', name: 'Global Load Balancer', type: 'Infrastructure', new: true, what: 'Anycast routing directing users to nearest healthy region using real-time health checks and latency metrics.', why: 'DNS-level routing is too coarse; application-layer global load balancing enables instant failover and cost optimization.', problems: 'Solves instant disaster failover, cost-based routing to cheaper regions, A/B testing across geographies, and DDoS geo-blocking.' },
+            { phase: 'VI', name: 'Custom Mapping', type: 'Core', new: true, what: 'Proprietary map data, routing engine, and POI database reducing Google Maps dependency and cost.', why: 'At million-user scale, Google Maps API costs exceed engineering salaries; owning maps enables differentiation and margin control.', problems: 'Solves billion-dollar API cost elimination, custom pickup point knowledge, real-time road closure integration, and map data monetization.' },
+            { phase: 'VI', name: 'Edge Computing', type: 'Infrastructure', new: true, what: 'Computation at CDN edges for ETA calculation, fare estimation, and driver matching near user locations.', why: 'Round-trips to central data centers add 100ms+ latency; edge compute places logic near users for instant response.', problems: 'Solves sub-50ms fare quotes, offline-first driver matching, bandwidth reduction for telemetry, and regional compliance filtering.' },
+            { phase: 'VI', name: 'Autonomous Dispatch', type: 'Core', new: true, what: 'AI-driven global optimization assigning drivers using reinforcement learning across entire city supply networks.', why: 'Local greedy matching creates globally suboptimal outcomes; RL optimizes for system-wide efficiency and earnings fairness.', problems: 'Solves city-wide supply-demand equilibrium, driver earnings equality, deadheading reduction, and multi-modal transit integration.' },
+            { phase: 'VI', name: 'Financial Ledger', type: 'Business', new: true, what: 'Immutable double-entry ledger recording every cent movement for regulatory compliance and instant reconciliation.', why: 'Financial correctness is non-negotiable; an append-only ledger provides audit trails and eliminates reconciliation ambiguity.', problems: 'Solves regulatory audit requirements, instant payout reconciliation, multi-currency settlement, and chargeback evidence generation.' },
+            { phase: 'VI', name: 'Multi-cloud Orchestrator', type: 'Infrastructure', new: true, what: 'Abstraction layer deploying workloads across AWS, GCP, and Azure based on cost, capability, and risk diversification.', why: 'Vendor lock-in creates negotiation weakness and single-provider outage risk; multi-cloud ensures business continuity.', problems: 'Solves cloud vendor outage resilience, cost arbitrage between providers, specialized service usage, and regulatory cloud requirements.' },
+            { phase: 'VI', name: 'Compliance/GDPR', type: 'Infrastructure', new: true, what: 'Automated data governance enforcing retention policies, right-to-erasure, and cross-border transfer rules.', why: 'Manual compliance fails at scale; automated policy enforcement prevents fines and ensures privacy-by-design architecture.', problems: 'Solves GDPR Article 17 erasure, CCPA compliance, data localization enforcement, and automated privacy impact assessments.' },
+            { phase: 'VI', name: 'Developer Platform', type: 'Feature', new: true, what: 'Public APIs and SDKs allowing third-party developers to build on Uber services like delivery and freight.', why: 'Platform strategy requires external developer access with sandboxing, documentation, and usage billing separate from internal APIs.', problems: 'Solves API monetization, third-party rate limiting, sandbox environment isolation, and developer onboarding automation.' }
+        ];
+
+        const typeColors = {
+            'Core': 'bg-red-500/20 text-red-400 border-red-500/30',
+            'Infrastructure': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+            'Analytics': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+            'Business': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+            'Feature': 'bg-green-500/20 text-green-400 border-green-500/30',
+            'Monitoring': 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+        };
+
+        const questions = [
+            "How do you prevent the same driver from being assigned to two simultaneous rides during high-concurrency matching?",
+            "Explain the CAP theorem trade-off in the Ride Matching Engine. Which property do you sacrifice and why?",
+            "Design the database schema for the Trip entity. How do you handle the growing size of location history?",
+            "What happens if the Notification Service is down when a trip completes? How do you ensure payment still processes?",
+            "How do you calculate the 'nearest driver'? Euclidean distance vs road network distance — which do you use in Phase I and why?",
+            "Describe the idempotency mechanism for the 'Request Ride' API to prevent double-charging from retry storms.",
+            "Why is Redis appropriate for driver sessions but not for trip financial records? Differentiate cache vs source of truth.",
+            "How would you handle a complete PostgreSQL primary failure at 2 AM with 5 active trips in progress?",
+            "What is your strategy for database connection pool sizing given 10 concurrent users and 5 services?",
+            "Design the WebSocket protocol between Driver App and Ride Matching Engine for real-time location push.",
+            "How do you ensure the Pricing Service calculates identical fares for the same route requested twice in one minute?",
+            "Explain why you would or would not use a message queue for the matching algorithm in Phase I.",
+            "What metrics define the health of the Ride Matching Engine? Define SLIs, SLOs, and SLAs.",
+            "How do you secure driver location data in transit and at rest? Address both encryption and access control.",
+            "Describe the state machine for a trip. How many states? Which transitions are irreversible?"
+        ];
+
+        const answers = [
+            {
+                q: "How do you prevent the same driver from being assigned to two simultaneous rides during high-concurrency matching?",
+                a: "You implement an atomic compare-and-swap operation using Redis SETNX or PostgreSQL advisory locks with a short TTL. In Phase I, I prefer PostgreSQL SELECT FOR UPDATE SKIP LOCKED on the drivers table—it's transactionally consistent with the trip creation. The matching engine queries available drivers, attempts to lock the chosen driver row, and only proceeds with trip creation if the lock acquisition succeeds. If another thread holds the lock, the engine skips to the next nearest driver. This couples lock duration with transaction boundary, ensuring automatic release on rollback. Redis SETNX is faster but introduces a separate consistency domain; use it only when DB lock contention exceeds 100ms p99."
+            },
+            {
+                q: "Explain the CAP theorem trade-off in the Ride Matching Engine. Which property do you sacrifice and why?",
+                a: "In Phase I, we sacrifice Availability for Consistency and Partition tolerance. A double-booking is a catastrophic business failure—imagine two riders entering the same car. We choose CP because the blast radius of inconsistency exceeds the blast radius of temporary unavailability. During a network partition between the matching engine and PostgreSQL, the service returns 503 Service Unavailable rather than risking a split-brain match. This is acceptable for 10 users; riders retry. As we scale to Phase III, we introduce cached driver availability in Redis with TTL-based expiration, moving toward an AP model for availability queries while keeping the assignment transaction strictly CP."
+            },
+            {
+                q: "Design the database schema for the Trip entity. How do you handle the growing size of location history?",
+                a: "The trips table contains: trip_id (UUIDv7, time-sortable), rider_id, driver_id, status (CHECK constraint: REQUESTED→MATCHED→PICKED_UP→COMPLETED), fare_breakdown (JSONB for flexibility), created_at, completed_at. Foreign keys to users with ON DELETE RESTRICT to prevent accidental user deletion with active trips. Location history does NOT live in the trips table. I create a separate trip_locations table partitioned by trip_id hash, storing (trip_id, timestamp, lat, lon, accuracy, heading) with a BRIN index on timestamp for time-range scans. At Phase VI, this migrates to a columnar store like ClickHouse. For Phase I, we keep last 48 hours in Postgres and archive to S3 Parquet daily."
+            },
+            {
+                q: "What happens if the Notification Service is down when a trip completes? How do you ensure payment still processes?",
+                a: "Never put notification in the synchronous critical path. The Trip Manager commits the completion transaction, emits a domain event to an in-memory queue (Go channel in Phase I, Kafka in Phase V), and immediately returns success to the client. Payment reconciliation is a separate consumer of the 'TripCompleted' event. If the Notification Service is down, events accumulate in the queue up to a memory limit, then spill to disk or PostgreSQL dead-letter table. We retry with exponential backoff. The user sees the trip complete; the receipt email may delay 30 seconds. This is event-driven architecture 101: notifications are best-effort, payments are guaranteed."
+            },
+            {
+                q: "How do you calculate the 'nearest driver'? Euclidean distance vs road network distance — which do you use in Phase I and why?",
+                a: "Phase I uses geohash-based Euclidean approximation with the Haversine formula on lat/lon. Here's why: road network distance requires calling Google Maps Distance Matrix API at $5 per 1000 elements. At 10 users, that's negligible, but the API latency is 200-800ms—unacceptable for matching. Haversine calculation is <1ms in-memory. We accept the inaccuracy that a driver across a river may appear closer than one on the correct side; the driver can reject or the 2-minute ETA buffer absorbs this. In Phase IV, we pre-compute road network distance between geohash centroids using OSRM and cache results, blending Euclidean for coarse filtering and cached road distance for final ranking."
+            },
+            {
+                q: "Describe the idempotency mechanism for the 'Request Ride' API to prevent double-charging from retry storms.",
+                a: "The client generates an Idempotency-Key UUID stored in localStorage and sends it in the header. The API Gateway caches this key in Redis with a 24-hour TTL. The Ride Matching Engine wraps trip creation in a transaction: first INSERT INTO idempotency_keys (key, response, created_at) VALUES (...) ON CONFLICT DO NOTHING. If the insert succeeds, proceed with matching. If it fails, return the cached response from the idempotency_keys table without re-executing business logic. This key is also passed to the Payment Service, which uses it as the Stripe idempotency key. Thus, retries at any layer—client, gateway, or payment—are mechanically deduplicated."
+            },
+            {
+                q: "Why is Redis appropriate for driver sessions but not for trip financial records? Differentiate cache vs source of truth.",
+                a: "Redis is an in-memory data structure store with asynchronous persistence (RDB snapshots, AOF). It can lose seconds of data on crash by design. Driver sessions are ephemeral—if Redis restarts, drivers simply re-login. The blast radius is a 30-second inconvenience. Financial records have legal and contractual durability requirements; losing a trip fare is irreversible and violates accounting principles. PostgreSQL uses WAL (Write-Ahead Logging) with fsync on commit, guaranteeing durability (the 'D' in ACID). The rule: data that can be reconstructed from other sources belongs in cache; data that cannot be reconstructed and has legal implications belongs in the relational source of truth. Never store money in Redis."
+            },
+            {
+                q: "How would you handle a complete PostgreSQL primary failure at 2 AM with 5 active trips in progress?",
+                a: "Phase I architecture includes a streaming replica in synchronous_commit = remote_apply mode. On primary failure, we execute a controlled failover: 1) Promote replica using pg_promote() or Patroni automation. 2) Update application DSN to point to new primary—Phase I uses environment variables requiring rolling restart (30 seconds with Kubernetes). 3) The 5 in-progress trips: if the failure occurred mid-transaction, the application receives a connection error and retries; the new primary has the committed state via WAL replay. Uncommitted transactions are lost, but the client receives a 503 and retries the request, generating a new trip if necessary. RPO is near-zero; RTO is 60 seconds. We accept this because 10 users can tolerate a 1-minute blip."
+            },
+            {
+                q: "What is your strategy for database connection pool sizing given 10 concurrent users and 5 services?",
+                a: "Use the formula: connections = ((core_count × 2) + effective_spindle_count) per instance. With t3.micro (2 vCPU), that's 5 connections per service instance. With 5 services and 2 instances each for redundancy, that's 50 total connections. PostgreSQL defaults to 100 max_connections, so we're safe. But I configure PgBouncer in transaction pooling mode at Phase II. In Phase I, each service uses a pool of 5–10 connections with a 30-second idle timeout and 5-second connection timeout. Never use 'SELECT 1' health checks—use the built-in driver ping. Monitor active vs idle connections via Prometheus; if idle > 70%, reduce pool size to prevent memory waste."
+            },
+            {
+                q: "Design the WebSocket protocol between Driver App and Ride Matching Engine for real-time location push.",
+                a: "Use a bidirectional WebSocket over TLS 1.3 with protocol-level heartbeats every 30 seconds. Message framing: {version: 1, type: 'LOCATION_UPDATE', payload: {lat, lon, accuracy, timestamp, bearing, speed}, seq: 42, ack: 41}. Sequence numbers ensure exactly-once processing; the server acknowledges the highest processed seq. On reconnection, the client resends unacknowledged messages from its outbound buffer. The server maintains a 60-second sliding window of driver locations in Redis (GeoAdd with 60s TTL). Connection state is separate from business state—if the socket drops, the driver remains 'online' for 120 seconds before automatic logout, preventing flapping during tunnel transitions."
+            },
+            {
+                q: "How do you ensure the Pricing Service calculates identical fares for the same route requested twice in one minute?",
+                a: "Deterministic pricing requires immutability of inputs. The Pricing Service hashes the route polyline, vehicle type, and timestamp rounded to the nearest 5-minute bucket using SHA-256. This hash becomes a cache key in Redis with a 5-minute TTL. If a second request arrives with identical inputs within the window, the cached fare is returned without recalculation. Surge multipliers are also frozen per 5-minute geohash bucket. This prevents price jitter that confuses users. For legal compliance, we store the pricing inputs and the resulting fare in the trip record, enabling post-hoc audit. The key insight: pricing is a pure function of immutable inputs at a specific time bucket."
+            },
+            {
+                q: "Explain why you would or would not use a message queue for the matching algorithm in Phase I.",
+                a: "I would NOT use a distributed message queue like RabbitMQ for the core matching loop in Phase I. Matching requires synchronous, atomic decision-making: check driver availability, lock driver, create trip, respond to rider. A queue introduces latency, visibility timeout complexity, and poison pill risks that are unacceptable for a 2-second user-facing operation. However, I WOULD use an in-memory Go channel (buffered to 100) for post-matching side effects: sending SMS, updating analytics, and logging. This provides fire-and-forget decoupling without operational complexity. The rule: synchronous path for business-critical state transitions; asynchronous path for best-effort side effects. Add RabbitMQ only when we exceed single-node channel capacity in Phase III."
+            },
+            {
+                q: "What metrics define the health of the Ride Matching Engine? Define SLIs, SLOs, and SLAs.",
+                a: "SLI (Service Level Indicator): p99 matching latency from request to driver assignment. SLO (Service Level Objective): p99 < 2000ms for 28-day rolling window. SLA (Service Level Agreement): 99.9% availability monthly; if breached, credits issued to enterprise partners. Additional SLIs: match success rate (SLO: >95%), driver rejection rate (SLO: <15%), concurrent match attempts per second (capacity planning), and stale location percentage (SLO: <5% of drivers with location older than 30s). I instrument these via Prometheus histograms with exponential buckets. The golden signals are latency, traffic, errors, and saturation—specifically DB connection pool exhaustion and Redis memory usage."
+            },
+            {
+                q: "How do you secure driver location data in transit and at rest? Address both encryption and access control.",
+                a: "In transit: TLS 1.3 with certificate pinning in mobile apps to prevent MITM attacks. Location streams use WebSockets over WSS. At rest: driver location history in PostgreSQL is encrypted using pgcrypto AES-256 with keys stored in AWS KMS or HashiCorp Vault. Access control: the Driver Location Service enforces attribute-based access control (ABAC)—a support agent can see a driver's current city but not precise home address history. Location data is anonymized after 90 days for analytics, retaining only geohash-level precision (±150m). RBAC roles: DRIVER (own data only), DISPATCHER (city-wide current locations), FRAUD_ANALYST (historical with approval), ENGINEER (no production PII access)."
+            },
+            {
+                q: "Describe the state machine for a trip. How many states? Which transitions are irreversible?",
+                a: "There are 7 states: REQUESTED, DRIVER_ASSIGNED, DRIVER_ARRIVED, IN_PROGRESS, COMPLETED, CANCELLED_BY_RIDER, CANCELLED_BY_DRIVER. Irreversible transitions: any path to COMPLETED or CANCELLED—there is no 'reopen' from terminal states. DRIVER_ARRIVED cannot revert to DRIVER_ASSIGNED (the driver is physically there). IN_PROGRESS cannot revert to DRIVER_ARRIVED (odometer has increased). Cancellations are valid only from REQUESTED or DRIVER_ASSIGNED; once IN_PROGRESS, the only exit is COMPLETED. I implement this as a database CHECK constraint using a state transition matrix encoded in a PostgreSQL ENUM with a trigger function. This prevents application bugs from corrupting trip history. The state machine is also encoded in the Trip Manager code as a Go map[State][]State representing valid next states."
+            }
+        ];
+
+        let currentPhase = 'I';
+
+        function renderPhaseTabs() {
+            const container = document.getElementById('phaseTabs');
+            container.innerHTML = phases.map(p => `
+                <button onclick="setPhase('${p.id}')" 
+                    class="phase-tab flex-shrink-0 px-6 py-3 rounded-xl border border-gray-800 ${p.id === currentPhase ? 'active text-white' : 'bg-gray-900/50 text-gray-400 hover:bg-gray-800'} min-w-[140px] text-left">
+                    <div class="text-xs font-mono opacity-70 mb-1">Phase ${p.id}</div>
+                    <div class="font-bold text-sm">${p.range} users</div>
+                    <div class="text-xs mt-1 opacity-60">${p.title}</div>
+                </button>
+            `).join('');
+        }
+
+        function setPhase(phase) {
+            currentPhase = phase;
+            renderPhaseTabs();
+            renderComponents();
+        }
+
+        function renderComponents() {
+            const grid = document.getElementById('componentGrid');
+            const filtered = components.filter(c => c.phase === currentPhase);
+
+            grid.innerHTML = filtered.map((c, i) => `
+                <div class="component-card bg-uber-card rounded-xl border ${c.new && c.phase === currentPhase ? 'border-uber-accent/50' : 'border-gray-800'} p-6 relative overflow-hidden group" style="animation: fadeIn 0.5s ease ${i * 0.1}s both;">
+                    ${c.new && c.phase === currentPhase ? '<div class="absolute top-0 right-0 bg-uber-accent text-white text-xs font-bold px-3 py-1 rounded-bl-lg">NEW</div>' : ''}
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="type-badge px-2 py-1 rounded ${typeColors[c.type]}">${c.type}</span>
+                        <span class="text-xs font-mono text-gray-500">Phase ${c.phase}</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3 group-hover:text-uber-accent transition-colors">${c.name}</h3>
+
+                    <div class="space-y-4">
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">What</div>
+                            <p class="text-sm text-gray-300 leading-relaxed">${c.what}</p>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Why Separate</div>
+                            <p class="text-sm text-gray-300 leading-relaxed">${c.why}</p>
+                        </div>
+                        <div class="bg-black/20 rounded-lg p-3 border border-gray-800">
+                            <div class="text-xs font-semibold text-uber-accent uppercase tracking-wider mb-1">Problems Solved</div>
+                            <p class="text-sm text-gray-300 leading-relaxed">${c.problems}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-gray-800 flex items-center gap-2 text-xs text-gray-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Built on: ${getPrereqs(c.phase, c.type)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getPrereqs(phase, type) {
+            const prereqs = {
+                'I': 'Greenfield',
+                'II': 'Phase I Core + DB',
+                'III': 'Phase II Caching + Payments',
+                'IV': 'Phase III Queues + Search',
+                'V': 'Phase IV Monitoring + Warehouse',
+                'VI': 'Phase V Streaming + Multi-region'
+            };
+            return prereqs[phase] || 'Previous phases';
+        }
+
+        function scrollCarousel(dir) {
+            document.getElementById('phaseTabs').scrollBy({ left: dir * 200, behavior: 'smooth' });
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questionList');
+            container.innerHTML = questions.map((q, i) => `
+                <div class="question-card bg-uber-card rounded-lg p-5 flex items-start gap-4 cursor-pointer" onclick="toggleAnswer(${i})">
+                    <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-gray-400 flex-shrink-0">${i + 1}</div>
+                    <div class="flex-1">
+                        <p class="text-gray-200 font-medium">${q}</p>
+                        <div id="answer-${i}" class="hidden mt-4 pt-4 border-t border-gray-700">
+                            <div class="bg-black/30 rounded-lg p-4 text-sm text-gray-300 leading-relaxed">
+                                <span class="text-uber-accent font-semibold">Architect Answer:</span> ${answers[i].a}
+                            </div>
+                        </div>
+                    </div>
+                    <svg id="icon-${i}" class="w-5 h-5 text-gray-500 flex-shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            `).join('');
+        }
+
+        function toggleAnswer(i) {
+            const el = document.getElementById(`answer-${i}`);
+            const icon = document.getElementById(`icon-${i}`);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                el.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function renderAnswers() {
+            const container = document.getElementById('answerSection');
+            container.innerHTML = answers.map((item, i) => `
+                <div class="answer-section rounded-xl border border-gray-800 overflow-hidden">
+                    <div class="bg-uber-card p-6">
+                        <div class="flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-uber-accent font-bold text-lg flex-shrink-0">Q${i+1}</div>
+                            <div>
+                                <h4 class="text-lg font-semibold text-white mb-4">${item.q}</h4>
+                                <div class="prose prose-invert max-w-none">
+                                    <div class="bg-black/20 rounded-lg p-6 border-l-4 border-uber-accent">
+                                        <p class="text-gray-300 leading-relaxed text-sm md:text-base">${item.a}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        mermaid.initialize({ 
+            theme: 'dark', 
+            securityLevel: 'loose',
+            themeVariables: {
+                primaryColor: '#276ef1',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#276ef1',
+                lineColor: '#666',
+                secondaryColor: '#1e1e1e',
+                tertiaryColor: '#2d2d2d',
+                fontFamily: 'Inter'
+            }
+        });
+
+        renderPhaseTabs();
+        renderComponents();
+        renderQuestions();
+        renderAnswers();
+
+        // Add fade-in animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
