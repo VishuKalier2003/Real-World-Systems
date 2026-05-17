@@ -1,778 +1,1483 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WhatsApp System Design - Phase Evolution</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp System Design - Phase Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #151b2b;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent-core: #ef4444;
+            --accent-infra: #3b82f6;
+            --accent-monitor: #10b981;
+            --accent-analytics: #f59e0b;
+            --accent-business: #8b5cf6;
+            --accent-feature: #ec4899;
+            --border: #334155;
+            --hover: #27354f;
+        }
 
-  :root {
-    --bg-primary: #0b1120;
-    --bg-secondary: #151e32;
-    --bg-card: #1e293b;
-    --bg-hover: #334155;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --accent-blue: #3b82f6;
-    --accent-green: #10b981;
-    --accent-purple: #8b5cf6;
-    --accent-orange: #f59e0b;
-    --accent-red: #ef4444;
-    --accent-yellow: #eab308;
-    --border: #334155;
-  }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { 
-    font-family: 'Inter', sans-serif; 
-    background: var(--bg-primary); 
-    color: var(--text-primary); 
-    min-height: 100vh;
-    line-height: 1.6;
-  }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
 
-  .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-  header { text-align: center; margin-bottom: 50px; }
-  header h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  header p { color: var(--text-secondary); font-size: 1.1rem; max-width: 700px; margin: 0 auto; }
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
 
-  /* Phase Selector */
-  .phase-selector { 
-    display: flex; 
-    justify-content: center; 
-    gap: 15px; 
-    margin-bottom: 40px; 
-    flex-wrap: wrap;
-  }
-  .phase-btn { 
-    position: relative;
-    padding: 16px 28px; 
-    border: 2px solid var(--border); 
-    border-radius: 12px; 
-    background: var(--bg-secondary); 
-    color: var(--text-secondary); 
-    cursor: pointer; 
-    transition: all 0.3s ease;
-    font-weight: 600;
-    font-size: 0.95rem;
-    min-width: 180px;
-    text-align: center;
-  }
-  .phase-btn:hover { border-color: var(--accent-blue); transform: translateY(-2px); }
-  .phase-btn.active { 
-    background: linear-gradient(135deg, #3b82f6, #2563eb); 
-    color: white; 
-    border-color: transparent;
-    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
-  }
-  .phase-btn .users { display: block; font-size: 0.8rem; font-weight: 400; opacity: 0.9; margin-top: 4px; }
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
 
-  /* Phase Info */
-  .phase-info { 
-    text-align: center; 
-    margin-bottom: 30px; 
-    padding: 20px; 
-    background: var(--bg-secondary); 
-    border-radius: 12px; 
-    border-left: 4px solid var(--accent-blue);
-  }
-  .phase-info h2 { font-size: 1.5rem; margin-bottom: 8px; }
-  .phase-info p { color: var(--text-secondary); max-width: 800px; margin: 0 auto; }
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
 
-  /* Evolution Track */
-  .evolution-track { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center;
-    margin: 30px 0 40px; 
-    padding: 0 20px;
-    position: relative;
-  }
-  .evolution-track::before { 
-    content: ''; 
-    position: absolute; 
-    top: 50%; 
-    left: 40px; 
-    right: 40px; 
-    height: 4px; 
-    background: var(--bg-hover); 
-    z-index: 0; 
-    border-radius: 2px;
-  }
-  .evolution-step { 
-    width: 50px; 
-    height: 50px; 
-    border-radius: 50%; 
-    background: var(--bg-card); 
-    border: 3px solid var(--bg-hover);
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    position: relative; 
-    z-index: 1; 
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    transition: all 0.3s ease;
-  }
-  .evolution-step.active { 
-    background: var(--accent-blue); 
-    border-color: var(--accent-blue); 
-    color: white;
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-  }
-  .evolution-step.completed { 
-    background: var(--accent-green); 
-    border-color: var(--accent-green); 
-    color: white;
-  }
+        /* Phase Carousel */
+        .phase-carousel {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) var(--bg-secondary);
+        }
 
-  /* Carousel */
-  .section-title { font-size: 1.3rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-  .section-title .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent-blue); }
+        .phase-carousel::-webkit-scrollbar {
+            height: 8px;
+        }
 
-  .carousel-wrapper { position: relative; margin-bottom: 30px; }
-  .carousel { 
-    display: flex; 
-    gap: 20px; 
-    overflow-x: auto; 
-    padding: 20px 10px; 
-    scroll-snap-type: x mandatory;
-    scrollbar-width: thin;
-    scrollbar-color: var(--bg-hover) var(--bg-secondary);
-  }
-  .carousel::-webkit-scrollbar { height: 8px; }
-  .carousel::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 4px; }
-  .carousel::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 4px; }
+        .phase-carousel::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 4px;
+        }
 
-  .component-card { 
-    min-width: 300px; 
-    max-width: 300px;
-    background: var(--bg-card); 
-    border-radius: 16px; 
-    padding: 24px; 
-    scroll-snap-align: start; 
-    cursor: pointer; 
-    transition: all 0.3s ease; 
-    border: 2px solid transparent;
-    position: relative;
-    overflow: hidden;
-  }
-  .component-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--card-color, var(--accent-blue));
-  }
-  .component-card:hover { 
-    transform: translateY(-8px); 
-    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
-    border-color: var(--card-color, var(--accent-blue));
-  }
-  .component-card.selected { 
-    border-color: var(--card-color, var(--accent-blue));
-    background: var(--bg-secondary);
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-  }
+        .phase-carousel::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
 
-  .card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px; }
-  .card-title { font-size: 1.1rem; font-weight: 600; line-height: 1.3; }
-  .card-phase { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; background: var(--bg-hover); color: var(--text-secondary); font-weight: 500; }
+        .phase-card {
+            min-width: 220px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
 
-  .type-badge { 
-    display: inline-flex; 
-    align-items: center;
-    gap: 6px;
-    padding: 6px 14px; 
-    border-radius: 20px; 
-    font-size: 0.8rem; 
-    font-weight: 600;
-    margin-bottom: 16px;
-    letter-spacing: 0.3px;
-  }
-  .type-core { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-  .type-infra { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
-  .type-feature { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-  .type-monitor { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-  .type-analytics { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
-  .type-business { background: rgba(234, 179, 8, 0.15); color: #facc15; }
+        .phase-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
 
-  .card-desc { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px; }
-  .card-meta { display: flex; gap: 8px; flex-wrap: wrap; }
-  .meta-chip { font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; background: var(--bg-primary); color: var(--text-secondary); border: 1px solid var(--border); }
+        .phase-card:hover, .phase-card.active {
+            transform: translateY(-5px);
+            border-color: #60a5fa;
+            box-shadow: 0 10px 40px rgba(96, 165, 250, 0.1);
+        }
 
-  /* Previous Components */
-  .prev-section { margin-bottom: 30px; }
-  .prev-grid { display: flex; gap: 10px; flex-wrap: wrap; }
-  .prev-chip { 
-    padding: 8px 16px; 
-    border-radius: 8px; 
-    background: var(--bg-secondary); 
-    color: var(--text-secondary); 
-    font-size: 0.85rem;
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s;
-  }
-  .prev-chip:hover { background: var(--bg-hover); color: var(--text-primary); }
-  .prev-chip .indicator { width: 8px; height: 8px; border-radius: 50%; }
+        .phase-card.active::before {
+            opacity: 1;
+        }
 
-  /* Detail Panel */
-  .detail-panel { 
-    background: var(--bg-secondary); 
-    border-radius: 20px; 
-    padding: 40px; 
-    margin-top: 30px; 
-    display: none;
-    border: 1px solid var(--border);
-    position: relative;
-    overflow: hidden;
-  }
-  .detail-panel::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 5px;
-    background: var(--detail-color, var(--accent-blue));
-  }
-  .detail-panel.active { 
-    display: block; 
-    animation: slideUp 0.4s ease;
-  }
-  @keyframes slideUp { 
-    from { opacity: 0; transform: translateY(30px); } 
-    to { opacity: 1; transform: translateY(0); } 
-  }
+        .phase-number {
+            font-size: 0.85rem;
+            color: #60a5fa;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
 
-  .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
-  .detail-title { font-size: 1.8rem; font-weight: 700; }
-  .detail-subtitle { color: var(--text-secondary); margin-top: 5px; }
-  .detail-badges { display: flex; gap: 10px; }
+        .phase-range {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
 
-  .detail-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-    gap: 24px; 
-  }
-  .detail-box { 
-    background: var(--bg-card); 
-    padding: 28px; 
-    border-radius: 16px; 
-    border-left: 5px solid var(--box-color, var(--accent-blue));
-    transition: transform 0.2s;
-  }
-  .detail-box:hover { transform: translateX(5px); }
-  .detail-box h3 { 
-    font-size: 1rem; 
-    font-weight: 600; 
-    margin-bottom: 12px; 
-    display: flex; 
-    align-items: center; 
-    gap: 10px;
-    color: var(--box-color, var(--accent-blue));
-  }
-  .detail-box p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; }
-  .word-count { font-size: 0.75rem; color: var(--text-secondary); opacity: 0.7; margin-top: 8px; font-style: italic; }
+        .phase-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
 
-  .close-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: var(--bg-hover);
-    border: none;
-    color: var(--text-secondary);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-  }
-  .close-btn:hover { background: var(--accent-red); color: white; }
+        .component-count {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 12px;
+            background: rgba(96, 165, 250, 0.1);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #60a5fa;
+        }
 
-  /* Legend */
-  .legend { 
-    display: flex; 
-    justify-content: center; 
-    gap: 20px; 
-    margin-top: 40px; 
-    flex-wrap: wrap;
-    padding: 20px;
-    background: var(--bg-secondary);
-    border-radius: 12px;
-  }
-  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-secondary); }
-  .legend-dot { width: 14px; height: 14px; border-radius: 50%; }
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+            padding: 0 10px;
+        }
 
-  /* Responsive */
-  @media (max-width: 768px) {
-    header h1 { font-size: 1.8rem; }
-    .phase-btn { min-width: 140px; padding: 12px 16px; font-size: 0.85rem; }
-    .component-card { min-width: 260px; }
-    .detail-panel { padding: 24px; }
-    .detail-grid { grid-template-columns: 1fr; }
-  }
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
 
-  .hint-text { text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px; font-style: italic; }
-</style>
+        .filter-btn:hover, .filter-btn.active {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+            border-color: #60a5fa;
+        }
+
+        /* Component Grid */
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+
+        .component-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .component-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .component-item.type-core { border-left: 4px solid var(--accent-core); }
+        .component-item.type-infra { border-left: 4px solid var(--accent-infra); }
+        .component-item.type-monitor { border-left: 4px solid var(--accent-monitor); }
+        .component-item.type-analytics { border-left: 4px solid var(--accent-analytics); }
+        .component-item.type-business { border-left: 4px solid var(--accent-business); }
+        .component-item.type-feature { border-left: 4px solid var(--accent-feature); }
+
+        .component-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .component-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .component-type {
+            font-size: 0.75rem;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .type-core .component-type { background: rgba(239, 68, 68, 0.15); color: var(--accent-core); }
+        .type-infra .component-type { background: rgba(59, 130, 246, 0.15); color: var(--accent-infra); }
+        .type-monitor .component-type { background: rgba(16, 185, 129, 0.15); color: var(--accent-monitor); }
+        .type-analytics .component-type { background: rgba(245, 158, 11, 0.15); color: var(--accent-analytics); }
+        .type-business .component-type { background: rgba(139, 92, 246, 0.15); color: var(--accent-business); }
+        .type-feature .component-type { background: rgba(236, 72, 153, 0.15); color: var(--accent-feature); }
+
+        .component-phase {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .component-preview {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .component-phase-badge {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 4px 12px;
+            background: rgba(96, 165, 250, 0.1);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #60a5fa;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+            position: relative;
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            background: none;
+            border: none;
+        }
+
+        .modal-close:hover { color: var(--text-primary); }
+
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+        }
+
+        .modal-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .detail-box {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #60a5fa;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .detail-text {
+            color: var(--text-secondary);
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        /* Deep Dive Section */
+        .deep-dive {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            margin-top: 50px;
+        }
+
+        .deep-dive-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .deep-dive-header h2 {
+            font-size: 2rem;
+            background: linear-gradient(90deg, #f59e0b, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .section-box {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            color: #f59e0b;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .problem-statement {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(239, 68, 68, 0.05));
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            border-radius: 0 10px 10px 0;
+            margin-bottom: 20px;
+        }
+
+        .highlight-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .question-list {
+            list-style: none;
+        }
+
+        .question-list li {
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            counter-increment: q;
+            position: relative;
+            padding-left: 50px;
+        }
+
+        .question-list li::before {
+            content: counter(q);
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .answer-box {
+            background: rgba(16, 185, 129, 0.05);
+            border-left: 3px solid #10b981;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .answer-label {
+            color: #10b981;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .mermaid {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .check-icon {
+            width: 20px;
+            height: 20px;
+            background: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .arch-problem {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.05));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-right: 5px;
+        }
+
+        .badge-new { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .badge-scale { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .badge-enhance { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+
+        @media (max-width: 768px) {
+            .components-grid { grid-template-columns: 1fr; }
+            .phase-carousel { gap: 10px; }
+            .phase-card { min-width: 180px; padding: 15px; }
+            h1 { font-size: 1.8rem; }
+            .deep-dive { padding: 20px; }
+        }
+    </style>
 <base target="_blank">
 </head>
 <body>
+    <header>
+        <h1>WhatsApp System Architecture</h1>
+        <p class="subtitle">Microservices Evolution: 0 to 1,000,000 Users</p>
+    </header>
 
-<div class="container">
-  <header>
-    <h1>WhatsApp System Architecture</h1>
-    <p>Microservice evolution from prototype to 100,000 users. Click any component card to reveal detailed architecture reasoning.</p>
-  </header>
-
-  <div class="phase-selector" id="phaseSelector"></div>
-
-  <div class="evolution-track" id="evolutionTrack"></div>
-
-  <div class="phase-info" id="phaseInfo"></div>
-
-  <div class="prev-section" id="prevSection"></div>
-
-  <div class="section-title"><span class="dot"></span> New Components in This Phase</div>
-  <div class="hint-text">Click a card to view detailed breakdown (What, Why, Problems Solved)</div>
-
-  <div class="carousel-wrapper">
-    <div class="carousel" id="carousel"></div>
-  </div>
-
-  <div class="detail-panel" id="detailPanel">
-    <button class="close-btn" onclick="closeDetail()">&times;</button>
-    <div class="detail-header">
-      <div>
-        <div class="detail-title" id="detailTitle"></div>
-        <div class="detail-subtitle" id="detailSubtitle"></div>
-      </div>
-      <div class="detail-badges" id="detailBadges"></div>
-    </div>
-    <div class="detail-grid" id="detailGrid"></div>
-  </div>
-
-  <div class="legend">
-    <div class="legend-item"><div class="legend-dot" style="background: #60a5fa;"></div> Core Service</div>
-    <div class="legend-item"><div class="legend-dot" style="background: #cbd5e1;"></div> Infrastructure</div>
-    <div class="legend-item"><div class="legend-dot" style="background: #34d399;"></div> Feature</div>
-    <div class="legend-item"><div class="legend-dot" style="background: #fbbf24;"></div> Monitoring</div>
-    <div class="legend-item"><div class="legend-dot" style="background: #a78bfa;"></div> Analytics</div>
-    <div class="legend-item"><div class="legend-dot" style="background: #facc15;"></div> Business</div>
-  </div>
-</div>
-
-<script>
-const phases = [
-  { id: 1, name: "Phase I", range: "0 → 10 users", desc: "MVP stage. Single-server deployment, proof of concept, core messaging loop. Focus: get basic 1:1 chat working end-to-end.", color: "#3b82f6" },
-  { id: 2, name: "Phase II", range: "10 → 100 users", desc: "Early traction. Horizontal scaling begins, contact discovery, media sharing, and push notifications. Focus: social graph and rich content.", color: "#10b981" },
-  { id: 3, name: "Phase III", range: "100 → 1,000 users", desc: "Product-market fit. Search, stories, encryption, CDN, and rate limiting. Focus: privacy, content discovery, and abuse prevention.", color: "#8b5cf6" },
-  { id: 4, name: "Phase IV", range: "1,000 → 10,000 users", desc: "Scale-up. Voice/video calls, business APIs, analytics, moderation, and service mesh. Focus: monetization and real-time media.", color: "#f59e0b" },
-  { id: 5, name: "Phase V", range: "10,000 → 100,000 users", desc: "Regional scale. Global load balancing, data lakes, disaster recovery, compliance, and advanced caching. Focus: enterprise-grade reliability.", color: "#ef4444" }
-];
-
-const typeConfig = {
-  core: { label: "Core Service", class: "type-core", color: "#60a5fa" },
-  infra: { label: "Infrastructure", class: "type-infra", color: "#cbd5e1" },
-  feature: { label: "Feature", class: "type-feature", color: "#34d399" },
-  monitor: { label: "Monitoring", class: "type-monitor", color: "#fbbf24" },
-  analytics: { label: "Analytics", class: "type-analytics", color: "#a78bfa" },
-  business: { label: "Business", class: "type-business", color: "#facc15" }
-};
-
-const components = [
-  {
-    id: "client-gateway", name: "Client Gateway", type: "core", phase: 1,
-    short: "WebSocket connection manager for real-time bidirectional streaming between clients and servers.",
-    buildsOn: [],
-    what: "Manages persistent WebSocket connections from mobile and web clients for real-time bidirectional message streaming.",
-    why: "Isolates connection state from business logic, allowing independent scaling of concurrent user connections.",
-    problems: "Eliminates inefficient HTTP polling overhead, reliably handles thousands of concurrent persistent sockets, and cleanly decouples client connection lifecycle from core message processing logic."
-  },
-  {
-    id: "api-gateway", name: "API Gateway", type: "infra", phase: 1,
-    short: "Single entry point routing HTTP requests with auth, SSL termination, and routing logic.",
-    buildsOn: [],
-    what: "Single entry point routing HTTP requests to microservices with authentication, rate limiting, and SSL termination.",
-    why: "Abstracts internal service topology from clients, enabling independent deployment and versioning of backend services.",
-    problems: "Prevents direct client-to-service coupling, centralizes cross-cutting security concerns, simplifies traffic management, and enables unified API versioning across all platform features without client changes."
-  },
-  {
-    id: "user-service", name: "User Service", type: "core", phase: 1,
-    short: "Registration, authentication, profile management, and phone number verification.",
-    buildsOn: ["api-gateway"],
-    what: "Handles registration, authentication, profile management, and phone number verification for all platform users.",
-    why: "Centralizes identity and access control, ensuring consistent authentication across all WhatsApp features and services.",
-    problems: "Solves identity fragmentation across features, enables secure account recovery workflows, and provides a single source of truth for user metadata and permissions."
-  },
-  {
-    id: "message-service", name: "Message Service", type: "core", phase: 1,
-    short: "Core engine storing, routing, and delivering text messages reliably between users.",
-    buildsOn: ["client-gateway", "user-service"],
-    what: "Core messaging engine storing, routing, and delivering text messages between users and groups reliably.",
-    why: "Separates message lifecycle management from other features, enabling independent optimization for delivery guarantees.",
-    problems: "Ensures strict message ordering and persistence, handles offline delivery queues, prevents message loss during network failures, and maintains delivery receipts."
-  },
-  {
-    id: "database", name: "Database Layer", type: "infra", phase: 1,
-    short: "Relational store for user data, message metadata, and chat structures with ACID guarantees.",
-    buildsOn: [],
-    what: "Stores relational user data, message metadata, and chat structures with ACID guarantees and replication.",
-    why: "Centralized data management ensures consistency, backup strategies, and query optimization across all services.",
-    problems: "Prevents data inconsistency during concurrent updates, enables disaster recovery through replication, and supports complex transactional queries and reporting needs."
-  },
-  {
-    id: "cache", name: "Cache Layer", type: "infra", phase: 1,
-    short: "In-memory hot data storage for sessions, recent messages, and presence state.",
-    buildsOn: ["database"],
-    what: "Provides in-memory hot data storage for sessions, recent messages, and presence using distributed key-value stores.",
-    why: "Repeated database queries for frequently accessed data cause latency and load unacceptable for real-time chat.",
-    problems: "Reduces database load by orders of magnitude, delivers sub-millisecond data reads, and maintains session state consistently across stateless service instances."
-  },
-  {
-    id: "object-storage", name: "Object Storage", type: "infra", phase: 1,
-    short: "Durable blob repository for encrypted media files and message backup archives.",
-    buildsOn: [],
-    what: "Durable blob repository for encrypted media files, documents, voice notes, and message backup archives.",
-    why: "Unstructured binary data requires different storage economics and access patterns than structured relational data.",
-    problems: "Provides infinite horizontal scaling for files, prevents relational database bloat, and ensures media durability with geographic redundancy and encryption."
-  },
-  {
-    id: "load-balancer", name: "Load Balancer", type: "infra", phase: 1,
-    short: "Distributes incoming traffic across instances using health checks and routing algorithms.",
-    buildsOn: [],
-    what: "Distributes incoming traffic across service instances using health checks and intelligent routing algorithms.",
-    why: "Required for horizontal scaling, ensuring no single server becomes a bottleneck or single point of failure.",
-    problems: "Enables zero-downtime deployments through rolling updates, prevents server overload during traffic bursts, and improves fault tolerance and request distribution."
-  },
-  {
-    id: "chat-service", name: "Chat Service", type: "core", phase: 2,
-    short: "Conversation metadata, group creation, participants, admin privileges, and thread organization.",
-    buildsOn: ["message-service", "user-service"],
-    what: "Manages conversation metadata, group creation, participant lists, admin privileges, and chat thread organization.",
-    why: "Distinguishes conversation structure from message content, allowing independent scaling of chat metadata operations.",
-    problems: "Handles complex group membership changes, maintains conversation state consistency across devices, and enables efficient thread querying without impacting message delivery."
-  },
-  {
-    id: "contact-service", name: "Contact Service", type: "core", phase: 2,
-    short: "Discovers and syncs phone contacts by matching address books against registered users.",
-    buildsOn: ["user-service"],
-    what: "Discovers and syncs phone contacts, matching address books against registered users for connection building.",
-    why: "Isolates contact graph operations from messaging, protecting privacy and enabling granular access control policies.",
-    problems: "Enables privacy-preserving contact discovery, reduces contact synchronization latency for large address books, and prevents unauthorized access to user social graphs."
-  },
-  {
-    id: "presence-service", name: "Presence Service", type: "feature", phase: 2,
-    short: "Tracks and broadcasts online status, last seen, and typing indicators.",
-    buildsOn: ["client-gateway", "cache"],
-    what: "Tracks and broadcasts online status, last seen timestamps, and typing indicators to conversation participants.",
-    why: "Ephemeral state differs from persistent data, requiring high-write throughput and low-latency broadcast patterns.",
-    problems: "Delivers real-time activity awareness to users, reduces unnecessary push notifications when recipients are online, and manages ephemeral state without database bloat."
-  },
-  {
-    id: "media-service", name: "Media Service", type: "core", phase: 2,
-    short: "Processes, compresses, encrypts, and serves images, videos, docs, and voice messages.",
-    buildsOn: ["object-storage", "message-service"],
-    what: "Processes, compresses, encrypts, and serves images, videos, documents, and voice messages uploaded by users.",
-    why: "Heavy I/O and CPU workloads must not block lightweight text messaging operations or degrade chat performance.",
-    problems: "Handles large file transfers efficiently, optimizes bandwidth usage through compression, and ensures encrypted media availability across all user devices and sessions."
-  },
-  {
-    id: "push-service", name: "Push Notification", type: "infra", phase: 2,
-    short: "Sends offline alerts via FCM and APNs when users disconnect from WebSocket gateways.",
-    buildsOn: ["message-service", "client-gateway"],
-    what: "Sends offline alerts via FCM and APNs when recipients are disconnected from WebSocket gateways.",
-    why: "Decouples device-specific push protocols from core messaging, supporting multiple platforms with unified logic.",
-    problems: "Ensures message awareness when users are offline, reduces battery drain from maintaining persistent connections, and handles platform-specific delivery differences transparently."
-  },
-  {
-    id: "message-queue", name: "Message Queue", type: "infra", phase: 2,
-    short: "Asynchronous event backbone for decoupled service communication and retry logic.",
-    buildsOn: ["message-service", "media-service"],
-    what: "Asynchronous event backbone for decoupled service communication, retry logic, and eventual consistency workflows.",
-    why: "Synchronous calls between services create cascading failures and tight coupling that prevent independent scaling.",
-    problems: "Absorbs traffic spikes without dropping data, enables reliable background processing, and cleanly decouples event producers from downstream consumers."
-  },
-  {
-    id: "monitoring", name: "Monitoring", type: "monitor", phase: 2,
-    short: "Distributed tracing, metrics, logs, and alerting for system health visibility.",
-    buildsOn: ["api-gateway", "load-balancer"],
-    what: "Distributed tracing, metrics collection, log aggregation, and alerting for system health and performance visibility.",
-    why: "Debugging distributed systems requires centralized visibility impossible to achieve by inspecting individual service logs.",
-    problems: "Reduces mean time to recovery during incidents, enables proactive performance anomaly detection, and provides optimization insights across the entire service mesh."
-  },
-  {
-    id: "search-service", name: "Search Service", type: "feature", phase: 3,
-    short: "Indexes and queries message content, captions, and contacts for fast retrieval.",
-    buildsOn: ["message-service", "chat-service", "database"],
-    what: "Indexes and queries message content, media captions, and contact names for fast conversation retrieval.",
-    why: "Full-text search requires specialized inverted indexes and ranking algorithms separate from transactional databases.",
-    problems: "Enables quick historical message retrieval across large chat histories, reduces client-side storage burden, and supports fuzzy matching with relevance ranking."
-  },
-  {
-    id: "stories", name: "Status/Stories", type: "feature", phase: 3,
-    short: "Ephemeral twenty-four-hour updates visible to selected contacts and groups.",
-    buildsOn: ["media-service", "presence-service", "object-storage"],
-    what: "Manages ephemeral twenty-four-hour photo, video, and text updates visible to selected contacts and groups.",
-    why: "Ephemeral content has distinct access patterns, TTL requirements, and broadcast semantics unlike persistent chat.",
-    problems: "Automates content expiration after twenty-four hours, manages privacy-aware broadcasting to selected audiences, and handles high-volume temporary media delivery efficiently."
-  },
-  {
-    id: "encryption", name: "E2E Encryption", type: "core", phase: 3,
-    short: "Signal Protocol key management, distribution, and transparent message encryption.",
-    buildsOn: ["message-service", "user-service"],
-    what: "Manages Signal Protocol key generation, distribution, verification, and transparent message encryption and decryption.",
-    why: "Cryptographic operations are computationally intensive and security-critical, requiring isolated hardened infrastructure.",
-    problems: "Protects message confidentiality even from server compromise, prevents man-in-the-middle attacks, and ensures forward secrecy for all conversations."
-  },
-  {
-    id: "rate-limiter", name: "Rate Limiter", type: "infra", phase: 3,
-    short: "Throttles API requests per user and IP to prevent abuse and cascading failures.",
-    buildsOn: ["api-gateway", "cache"],
-    what: "Throttles API requests per user and IP to prevent abuse, spam, and cascading service failures.",
-    why: "Centralized throttling protects all downstream services without implementing redundant logic in each microservice.",
-    problems: "Prevents DDoS and brute force attacks, ensures fair resource allocation among users, and maintains service availability during unexpected traffic spikes."
-  },
-  {
-    id: "cdn", name: "CDN", type: "infra", phase: 3,
-    short: "Edge-cached delivery network for fast media downloads across global regions.",
-    buildsOn: ["object-storage", "media-service"],
-    what: "Edge-cached content delivery network for fast media downloads and static assets across global regions.",
-    why: "Serving media from origin servers creates latency and bandwidth costs unacceptable for global user bases.",
-    problems: "Minimizes media download latency worldwide, dramatically reduces origin server bandwidth costs, and improves user experience on slow or mobile networks."
-  },
-  {
-    id: "call-service", name: "Voice/Video Call", type: "feature", phase: 4,
-    short: "WebRTC signaling and SFU routing for peer-to-peer and group calling.",
-    buildsOn: ["client-gateway", "presence-service", "message-queue"],
-    what: "Orchestrates WebRTC signaling, STUN and TURN relay, and SFU routing for peer-to-peer and group calling.",
-    why: "Real-time media streaming demands specialized low-latency infrastructure incompatible with standard HTTP request patterns.",
-    problems: "Enables high-quality audio and video communication, handles complex NAT traversal for connectivity, and manages adaptive bandwidth for varying networks."
-  },
-  {
-    id: "business-api", name: "Business API", type: "business", phase: 4,
-    short: "Verified business accounts, automated messaging APIs, and customer service tools.",
-    buildsOn: ["user-service", "message-service", "chat-service"],
-    what: "Provides verified business accounts, automated messaging APIs, catalog integration, and customer service tools.",
-    why: "Commercial use cases require distinct compliance, billing, and integration patterns separate from consumer chat.",
-    problems: "Enables scalable customer support automation, supports verified sender identities to prevent impersonation, and creates marketplace monetization opportunities for the platform."
-  },
-  {
-    id: "analytics", name: "Analytics Pipeline", type: "analytics", phase: 4,
-    short: "Collects and aggregates user behavior, message patterns, and system metrics.",
-    buildsOn: ["message-queue", "database", "monitoring"],
-    what: "Collects, processes, and aggregates user behavior, message patterns, and system metrics for business intelligence.",
-    why: "Analytical workloads are read-heavy and batch-oriented, conflicting with operational database performance requirements.",
-    problems: "Enables data-driven feature decisions, identifies performance bottlenecks proactively, supports capacity planning, and improves user retention through behavioral insights."
-  },
-  {
-    id: "moderation", name: "Moderation", type: "monitor", phase: 4,
-    short: "Scans media and messages for spam, illegal content, and policy violations.",
-    buildsOn: ["message-service", "media-service", "message-queue"],
-    what: "Scans shared media and messages for spam, illegal content, and policy violations using automated detection.",
-    why: "Content safety requires specialized ML models and human review workflows isolated from core messaging paths.",
-    problems: "Protects users from harmful content and scams, ensures regulatory compliance across regions, and reduces legal liability and platform abuse."
-  },
-  {
-    id: "service-discovery", name: "Service Discovery", type: "infra", phase: 4,
-    short: "Dynamic registry tracking available instances for automatic routing as containers scale.",
-    buildsOn: ["load-balancer", "api-gateway"],
-    what: "Dynamic registry tracking available service instances, enabling automatic routing as containers scale up or down.",
-    why: "Static IP configurations fail in elastic cloud environments where instances constantly appear and disappear.",
-    problems: "Enables auto-scaling and self-healing architectures, eliminates manual network configuration overhead, and supports dynamic microservice mesh routing without downtime."
-  },
-  {
-    id: "global-lb", name: "Global Load Balancer", type: "infra", phase: 5,
-    short: "Geo-DNS and anycast routing directing users to nearest healthy regional datacenter.",
-    buildsOn: ["load-balancer", "cdn", "service-discovery"],
-    what: "Geo-DNS and anycast routing directing users to the nearest healthy regional datacenter with failover.",
-    why: "Single-region deployments create unacceptable latency for global users and represent a massive single point of failure.",
-    problems: "Minimizes round-trip time for international users, enables automatic disaster recovery across regions, and distributes traffic based on regional capacity and health."
-  },
-  {
-    id: "data-lake", name: "Data Lake", type: "analytics", phase: 5,
-    short: "Centralized raw storage for historical messages, events, and logs for ML and compliance.",
-    buildsOn: ["analytics", "object-storage", "database"],
-    what: "Centralized raw storage for historical messages, events, and logs supporting machine learning and compliance querying.",
-    why: "Structured operational databases cannot economically store petabytes of historical data or support complex analytical joins.",
-    problems: "Enables long-term trend analysis, powers spam detection and recommendation models, and satisfies legal data retention requirements without impacting live systems."
-  },
-  {
-    id: "disaster-recovery", name: "Disaster Recovery", type: "infra", phase: 5,
-    short: "Automated backups, cross-region replication, and runbook orchestration for catastrophic failures.",
-    buildsOn: ["database", "object-storage", "global-lb"],
-    what: "Automated backups, cross-region replication, and runbook orchestration for catastrophic infrastructure failures.",
-    why: "Mission-critical messaging demands recovery objectives measured in minutes, not hours, with verified restore procedures.",
-    problems: "Guarantees business continuity during datacenter outages, minimizes Recovery Point Objective for message data, and automates failover without manual intervention."
-  },
-  {
-    id: "compliance", name: "Compliance & GDPR", type: "business", phase: 5,
-    short: "Data governance, right-to-erasure automation, audit trails, and regional data residency.",
-    buildsOn: ["user-service", "data-lake", "encryption"],
-    what: "Data governance, right-to-erasure automation, audit trails, and regional data residency enforcement.",
-    why: "Global regulations mandate strict data handling rules that must be enforced consistently across all distributed services.",
-    problems: "Ensures legal compliance with GDPR and regional laws, automates user data export and deletion requests, and maintains tamper-proof audit logs for regulators."
-  }
-];
-
-let currentPhase = 1;
-let selectedComponent = null;
-
-function init() {
-  renderPhaseSelector();
-  renderEvolutionTrack();
-  renderPhase(1);
-}
-
-function renderPhaseSelector() {
-  const container = document.getElementById('phaseSelector');
-  container.innerHTML = phases.map(p => `
-    <button class="phase-btn ${p.id === currentPhase ? 'active' : ''}" onclick="setPhase(${p.id})">
-      ${p.name}
-      <span class="users">${p.range}</span>
-    </button>
-  `).join('');
-}
-
-function renderEvolutionTrack() {
-  const container = document.getElementById('evolutionTrack');
-  container.innerHTML = phases.map(p => {
-    let cls = '';
-    if (p.id === currentPhase) cls = 'active';
-    else if (p.id < currentPhase) cls = 'completed';
-    return `<div class="evolution-step ${cls}">${p.id}</div>`;
-  }).join('');
-}
-
-function setPhase(id) {
-  currentPhase = id;
-  selectedComponent = null;
-  closeDetail();
-  renderPhaseSelector();
-  renderEvolutionTrack();
-  renderPhase(id);
-}
-
-function renderPhase(phaseId) {
-  const phase = phases.find(p => p.id === phaseId);
-  document.getElementById('phaseInfo').innerHTML = `
-    <h2>${phase.name}: ${phase.range} users</h2>
-    <p>${phase.desc}</p>
-  `;
-
-  // Previous components
-  const prevComps = components.filter(c => c.phase < phaseId);
-  const prevSection = document.getElementById('prevSection');
-  if (prevComps.length > 0) {
-    prevSection.innerHTML = `
-      <div class="section-title"><span class="dot" style="background: #64748b;"></span> Foundation from Previous Phases</div>
-      <div class="prev-grid">
-        ${prevComps.map(c => {
-          const tc = typeConfig[c.type];
-          return `<div class="prev-chip">
-            <span class="indicator" style="background: ${tc.color};"></span>
-            ${c.name}
-          </div>`;
-        }).join('')}
-      </div>
-    `;
-  } else {
-    prevSection.innerHTML = '';
-  }
-
-  // Current phase components
-  const currentComps = components.filter(c => c.phase === phaseId);
-  const carousel = document.getElementById('carousel');
-  carousel.innerHTML = currentComps.map(c => {
-    const tc = typeConfig[c.type];
-    const isSelected = selectedComponent === c.id;
-    return `
-      <div class="component-card ${isSelected ? 'selected' : ''}" 
-           style="--card-color: ${tc.color};"
-           onclick="selectComponent('${c.id}')">
-        <div class="card-header">
-          <div class="card-title">${c.name}</div>
-          <div class="card-phase">${phase.name}</div>
+    <div class="container">
+        <!-- Phase Carousel -->
+        <div class="phase-carousel" id="phaseCarousel">
+            <div class="phase-card active" data-phase="1" onclick="filterPhase(1)">
+                <div class="phase-number">Phase I</div>
+                <div class="phase-range">0 → 10 Users</div>
+                <div class="phase-desc">MVP foundation with core messaging, auth, and basic persistence. Monolith-friendly boundaries.</div>
+                <span class="component-count">6 Components</span>
+            </div>
+            <div class="phase-card" data-phase="2" onclick="filterPhase(2)">
+                <div class="phase-number">Phase II</div>
+                <div class="phase-range">10 → 100 Users</div>
+                <div class="phase-desc">Media sharing, group chats, caching layer, and async processing introduced.</div>
+                <span class="component-count">5 Components</span>
+            </div>
+            <div class="phase-card" data-phase="3" onclick="filterPhase(3)">
+                <div class="phase-number">Phase III</div>
+                <div class="phase-range">100 → 1,000 Users</div>
+                <div class="phase-desc">Status/stories, voice/video signaling, search, web sync, and observability.</div>
+                <span class="component-count">6 Components</span>
+            </div>
+            <div class="phase-card" data-phase="4" onclick="filterPhase(4)">
+                <div class="phase-number">Phase IV</div>
+                <div class="phase-range">1,000 → 10,000 Users</div>
+                <div class="phase-desc">Database sharding, CDN, analytics pipeline, backup/restore, and advanced monitoring.</div>
+                <span class="component-count">5 Components</span>
+            </div>
+            <div class="phase-card" data-phase="5" onclick="filterPhase(5)">
+                <div class="phase-number">Phase V</div>
+                <div class="phase-range">10,000 → 100,000 Users</div>
+                <div class="phase-desc">Business API, multi-region, rate limiting, anti-spam, and real-time dashboards.</div>
+                <span class="component-count">5 Components</span>
+            </div>
+            <div class="phase-card" data-phase="6" onclick="filterPhase(6)">
+                <div class="phase-number">Phase VI</div>
+                <div class="phase-range">100,000 → 1M Users</div>
+                <div class="phase-desc">Payments, global CDN, advanced ML, cross-shard transactions, and planetary scale.</div>
+                <span class="component-count">4 Components</span>
+            </div>
         </div>
-        <div class="type-badge ${tc.class}">
-          <span style="width: 8px; height: 8px; border-radius: 50%; background: ${tc.color}; display: inline-block;"></span>
-          ${tc.label}
+
+        <!-- Filter Tabs -->
+        <div class="filter-tabs">
+            <button class="filter-btn active" onclick="filterType('all')">All Types</button>
+            <button class="filter-btn" onclick="filterType('core')">🔴 Core</button>
+            <button class="filter-btn" onclick="filterType('infra')">🔵 Infrastructure</button>
+            <button class="filter-btn" onclick="filterType('monitor')">🟢 Monitoring</button>
+            <button class="filter-btn" onclick="filterType('analytics')">🟡 Analytics</button>
+            <button class="filter-btn" onclick="filterType('business')">🟣 Business</button>
+            <button class="filter-btn" onclick="filterType('feature')">🩷 Feature</button>
         </div>
-        <div class="card-desc">${c.short}</div>
-        <div class="card-meta">
-          ${c.buildsOn.length > 0 ? `<span class="meta-chip">Builds on: ${c.buildsOn.join(', ')}</span>` : '<span class="meta-chip">Foundation Layer</span>'}
+
+        <!-- Components Grid -->
+        <div class="components-grid" id="componentsGrid">
+            <!-- Phase I -->
+            <div class="component-item type-core" data-phase="1" data-type="core" onclick="openModal('core-messaging')">
+                <div class="component-header">
+                    <div class="component-name">Core Messaging Gateway</div>
+                    <span class="component-type">Core</span>
+                </div>
+                <div class="component-phase">Phase I • Foundation Layer</div>
+                <div class="component-preview">Real-time message ingestion, routing, and delivery via persistent WebSocket connections...</div>
+                <span class="component-phase-badge">Introduced Phase I</span>
+            </div>
+
+            <div class="component-item type-core" data-phase="1" data-type="core" onclick="openModal('user-service')">
+                <div class="component-header">
+                    <div class="component-name">User Identity & Auth</div>
+                    <span class="component-type">Core</span>
+                </div>
+                <div class="component-phase">Phase I • Foundation Layer</div>
+                <div class="component-preview">Registration, phone verification, tokens, session lifecycle, and identity resolution...</div>
+                <span class="component-phase-badge">Introduced Phase I</span>
+            </div>
+
+            <div class="component-item type-core" data-phase="1" data-type="core" onclick="openModal('websocket')">
+                <div class="component-header">
+                    <div class="component-name">WebSocket Connection Manager</div>
+                    <span class="component-type">Core</span>
+                </div>
+                <div class="component-phase">Phase I • Foundation Layer</div>
+                <div class="component-preview">Maintains persistent client connections, heartbeats, connection migration, presence...</div>
+                <span class="component-phase-badge">Introduced Phase I</span>
+            </div>
+
+            <div class="component-item type-core" data-phase="1" data-type="core" onclick="openModal('persistence')">
+                <div class="component-header">
+                    <div class="component-name">Message Persistence Store</div>
+                    <span class="component-type">Core</span>
+                </div>
+                <div class="component-phase">Phase I • Foundation Layer</div>
+                <div class="component-preview">Durable storage for history, edit logs, deletion records, and conversation metadata...</div>
+                <span class="component-phase-badge">Introduced Phase I</span>
+            </div>
+
+            <div class="component-item type-infra" data-phase="1" data-type="infra" onclick="openModal('api-gateway')">
+                <div class="component-header">
+                    <div class="component-name">API Gateway</div>
+                    <span class="component-type">Infra</span>
+                </div>
+                <div class="component-phase">Phase I • Edge Layer</div>
+                <div class="component-preview">SSL termination, rate limiting, request routing, and basic DDoS protection...</div>
+                <span class="component-phase-badge">Introduced Phase I</span>
+            </div>
+
+            <div class="component-item type-core" data-phase="1" data-type="core" onclick="openModal('push')">
+                <div class="component-header">
+                    <div class="component-name">Push Notification Relay</div>
+                    <span class="component-type">Core</span>
+                </div>
+                <div class="component-phase">Phase I • Foundation Layer</div>
+                <div class="component-preview">Bridges internal events to FCM/APNS for offline user alerts and device token management...</div>
+                <span class="component-phase-badge">Introduced Phase I</span>
+            </div>
+
+            <!-- Phase II -->
+            <div class="component-item type-core" data-phase="2" data-type="core" onclick="openModal('contact')">
+                <div class="component-header">
+                    <div class="component-name">Contact Discovery Service</div>
+                    <span class="component-type">Core</span>
+                </div>
+                <div class="component-phase">Phase II • Scaling Layer</div>
+                <div class="component-preview">Matches phone numbers to registered users while respecting privacy and consent...</div>
+                <span class="component-phase-badge">Introduced Phase II</span>
+            </div>
+
+            <div class="component-item type-feature" data-phase="2" data-type="feature" onclick="openModal('media')">
+                <div class="component-header">
+                    <div class="component-name">Media Storage & Processing</div>
+                    <span class="component-type">Feature</span>
+                </div>
+                <div class="component-phase">Phase II • Scaling Layer</div>
+                <div class="component-preview">Encrypted media storage, compression, thumbnail generation, and CDN distribution...</div>
+                <span class="component-phase-badge">Introduced Phase II</span>
+            </div>
+
+            <div class="component-item type-core" data-phase="2" data-type="core" onclick="openModal('group')">
+                <div class="component-header">
+                    <div class="component-name">Group Management Service</div>
+                    <span class="component-type">Core</span>
+                </div>
+                <div class="component-phase">Phase II • Scaling Layer</div>
+                <div class="component-preview">Group creation, membership changes, admin privileges, metadata, and broadcast fan-out...</div>
+                <span class="component-phase-badge">Introduced Phase II</span>
+            </div>
+
+            <div class="component-item type-infra" data-phase="2" data-type="infra" onclick="openModal('redis')">
+                <div class="component-header">
+                    <div class="component-name">Redis Cache Cluster</div>
+                    <span class="component-type">Infra</span>
+                </div>
+                <div class="component-phase">Phase II • Scaling Layer</div>
+                <div class="component-preview">In-memory store for sessions, recent conversations, presence status, and rate limit counters...</div>
+                <span class="component-phase-badge">Introduced Phase II</span>
+            </div>
+
+            <div class="component-item type-infra" data-phase="2" data-type="infra" onclick="openModal('queue')">
+                <div class="component-header">
+                    <div class="component-name">Distributed Message Queue</div>
+                    <span class="component-type">Infra</span>
+                </div>
+                <div class="component-phase">Phase II • Scaling Layer</div>
+                <div class="component-preview">Async middleware decoupling services for delivery events, media processing, notifications...</div>
+                <span class="component-phase-badge">Introduced Phase II</span>
+            </div>
+
+            <!-- Phase III -->
+            <div class="component-item type-core" data-phase="3" data-type="core" onclick="openModal('e2ee')">
+                <div class="component-header">
+                    <div class="component-name">End-to-End Encryption Service</div>
+                    <span class="component-type">Core</span>
+                </div>
+                <div class="component-phase">Phase III • Feature Layer</div>
+                <div class="component-preview">Signal Protocol implementation for key generation, pre-key management, and cryptographic envelopes...</div>
+                <span class="component-phase-badge">Introduced Phase III</span>
+            </div>
+
+            <div class="component-item type-feature" data-phase="3" data-type="feature" onclick="openModal('status')">
+                <div class="component-header">
+                    <div class="component-name">Status / Stories Service</div>
+                    <span class="component-type">Feature</span>
+                </div>
+                <div class="component-phase">Phase III • Feature Layer</div>
+                <div class="component-preview">Ephemeral content sharing with 24h expiration, privacy lists, and media pipeline integration...</div>
+                <span class="component-phase-badge">Introduced Phase III</span>
+            </div>
+
+            <div class="component-item type-feature" data-phase="3" data-type="feature" onclick="openModal('calls')">
+                <div class="component-header">
+                    <div class="component-name">Voice/Video Signaling</div>
+                    <span class="component-type">Feature</span>
+                </div>
+                <div class="component-phase">Phase III • Feature Layer</div>
+                <div class="component-preview">Call setup, ICE exchange, SDP negotiation, and ring state management for VoIP...</div>
+                <span class="component-phase-badge">Introduced Phase III</span>
+            </div>
+
+            <div class="component-item type-feature" data-phase="3" data-type="feature" onclick="openModal('search')">
+                <div class="component-header">
+                    <div class="component-name">Search & Indexing Service</div>
+                    <span class="component-type">Feature</span>
+                </div>
+                <div class="component-phase">Phase III • Feature Layer</div>
+                <div class="component-preview">Full-text search across messages, captions, and contacts with fuzzy matching...</div>
+                <span class="component-phase-badge">Introduced Phase III</span>
+            </div>
+
+            <div class="component-item type-monitor" data-phase="3" data-type="monitor" onclick="openModal('monitoring')">
+                <div class="component-header">
+                    <div class="component-name">Monitoring & Observability</div>
+                    <span class="component-type">Monitor</span>
+                </div>
+                <div class="component-phase">Phase III • Ops Layer</div>
+                <div class="component-preview">Metrics collection, distributed traces, structured logs, and health monitoring...</div>
+                <span class="component-phase-badge">Introduced Phase III</span>
+            </div>
+
+            <div class="component-item type-feature" data-phase="3" data-type="feature" onclick="openModal('web-sync')">
+                <div class="component-header">
+                    <div class="component-name">Web/Desktop Sync</div>
+                    <span class="component-type">Feature</span>
+                </div>
+                <div class="component-phase">Phase III • Feature Layer</div>
+                <div class="component-preview">Multi-device message synchronization, QR pairing, and state reconciliation...</div>
+                <span class="component-phase-badge">Introduced Phase III</span>
+            </div>
+
+            <!-- Phase IV -->
+            <div class="component-item type-analytics" data-phase="4" data-type="analytics" onclick="openModal('analytics')">
+                <div class="component-header">
+                    <div class="component-name">Analytics Event Pipeline</div>
+                    <span class="component-type">Analytics</span>
+                </div>
+                <div class="component-phase">Phase IV • Growth Layer</div>
+                <div class="component-preview">High-throughput ingestion of behavior events into data warehouse for product insights...</div>
+                <span class="component-phase-badge">Introduced Phase IV</span>
+            </div>
+
+            <div class="component-item type-infra" data-phase="4" data-type="infra" onclick="openModal('cdn')">
+                <div class="component-header">
+                    <div class="component-name">CDN & Edge Distribution</div>
+                    <span class="component-type">Infra</span>
+                </div>
+                <div class="component-phase">Phase IV • Growth Layer</div>
+                <div class="component-preview">Geographic distribution of media and static content with edge caching and origin shield...</div>
+                <span class="component-phase-badge">Introduced Phase IV</span>
+            </div>
+
+            <div class="component-item type-feature" data-phase="4" data-type="feature" onclick="openModal('backup')">
+                <div class="component-header">
+                    <div class="component-name">Backup & Restore Service</div>
+                    <span class="component-type">Feature</span>
+                </div>
+                <div class="component-phase">Phase IV • Growth Layer</div>
+                <div class="component-preview">Encrypted chat history backups to cloud storage and key-based device migration...</div>
+                <span class="component-phase-badge">Introduced Phase IV</span>
+            </div>
+
+            <div class="component-item type-infra" data-phase="4" data-type="infra" onclick="openModal('sharding')">
+                <div class="component-header">
+                    <div class="component-name">Database Sharding Layer</div>
+                    <span class="component-type">Infra</span>
+                </div>
+                <div class="component-phase">Phase IV • Growth Layer</div>
+                <div class="component-preview">Horizontal partitioning strategy, shard routing logic, and rebalancing orchestration...</div>
+                <span class="component-phase-badge">Introduced Phase IV</span>
+            </div>
+
+            <div class="component-item type-monitor" data-phase="4" data-type="monitor" onclick="openModal('alerting')">
+                <div class="component-header">
+                    <div class="component-name">Alerting & Incident Response</div>
+                    <span class="component-type">Monitor</span>
+                </div>
+                <div class="component-phase">Phase IV • Ops Layer</div>
+                <div class="component-preview">Automated anomaly detection, paging integration, runbook automation, and post-mortems...</div>
+                <span class="component-phase-badge">Introduced Phase IV</span>
+            </div>
+
+            <!-- Phase V -->
+            <div class="component-item type-business" data-phase="5" data-type="business" onclick="openModal('business-api')">
+                <div class="component-header">
+                    <div class="component-name">WhatsApp Business API</div>
+                    <span class="component-type">Business</span>
+                </div>
+                <div class="component-phase">Phase V • Enterprise Layer</div>
+                <div class="component-preview">Dedicated endpoints for business accounts, templated messages, catalog management, CRM integration...</div>
+                <span class="component-phase-badge">Introduced Phase V</span>
+            </div>
+
+            <div class="component-item type-infra" data-phase="5" data-type="infra" onclick="openModal('multi-region')">
+                <div class="component-header">
+                    <div class="component-name">Multi-Region Orchestrator</div>
+                    <span class="component-type">Infra</span>
+                </div>
+                <div class="component-phase">Phase V • Enterprise Layer</div>
+                <div class="component-preview">Cross-region deployment, traffic steering, data residency compliance, and disaster recovery...</div>
+                <span class="component-phase-badge">Introduced Phase V</span>
+            </div>
+
+            <div class="component-item type-business" data-phase="5" data-type="business" onclick="openModal('rate-limit')">
+                <div class="component-header">
+                    <div class="component-name">Rate Limiting & Anti-Spam</div>
+                    <span class="component-type">Business</span>
+                </div>
+                <div class="component-phase">Phase V • Enterprise Layer</div>
+                <div class="component-preview">Request quotas, abuse detection, behavioral heuristics, reputation scoring, and spam filtering...</div>
+                <span class="component-phase-badge">Introduced Phase V</span>
+            </div>
+
+            <div class="component-item type-analytics" data-phase="5" data-type="analytics" onclick="openModal('dashboards')">
+                <div class="component-header">
+                    <div class="component-name">Real-Time Dashboards</div>
+                    <span class="component-type">Analytics</span>
+                </div>
+                <div class="component-phase">Phase V • Enterprise Layer</div>
+                <div class="component-preview">Live operational dashboards for business metrics, usage patterns, and infrastructure health...</div>
+                <span class="component-phase-badge">Introduced Phase V</span>
+            </div>
+
+            <div class="component-item type-core" data-phase="5" data-type="core" onclick="openModal('reply')">
+                <div class="component-header">
+                    <div class="component-name">Reply & Threading Engine</div>
+                    <span class="component-type">Core</span>
+                </div>
+                <div class="component-phase">Phase V • Enterprise Layer</div>
+                <div class="component-preview">Message threading, reply chains, context preservation, and conversation branching logic...</div>
+                <span class="component-phase-badge">Introduced Phase V</span>
+            </div>
+
+            <!-- Phase VI -->
+            <div class="component-item type-business" data-phase="6" data-type="business" onclick="openModal('payments')">
+                <div class="component-header">
+                    <div class="component-name">Payment Processing Service</div>
+                    <span class="component-type">Business</span>
+                </div>
+                <div class="component-phase">Phase VI • Planetary Scale</div>
+                <div class="component-preview">UPI/payment linking, transaction authorization, fund transfers, and financial compliance...</div>
+                <span class="component-phase-badge">Introduced Phase VI</span>
+            </div>
+
+            <div class="component-item type-feature" data-phase="6" data-type="feature" onclick="openModal('ml')">
+                <div class="component-header">
+                    <div class="component-name">ML Inference Platform</div>
+                    <span class="component-type">Feature</span>
+                </div>
+                <div class="component-phase">Phase VI • Planetary Scale</div>
+                <div class="component-preview">Real-time spam detection, content moderation, smart replies, and predictive caching...</div>
+                <span class="component-phase-badge">Introduced Phase VI</span>
+            </div>
+
+            <div class="component-item type-infra" data-phase="6" data-type="infra" onclick="openModal('global-cdn')">
+                <div class="component-header">
+                    <div class="component-name">Global Edge Network</div>
+                    <span class="component-type">Infra</span>
+                </div>
+                <div class="component-phase">Phase VI • Planetary Scale</div>
+                <div class="component-preview">Planetary-scale edge nodes, Anycast routing, DDoS scrubbing, and TLS termination at edge...</div>
+                <span class="component-phase-badge">Introduced Phase VI</span>
+            </div>
+
+            <div class="component-item type-infra" data-phase="6" data-type="infra" onclick="openModal('cross-shard')">
+                <div class="component-header">
+                    <div class="component-name">Cross-Shard Transaction Coordinator</div>
+                    <span class="component-type">Infra</span>
+                </div>
+                <div class="component-phase">Phase VI • Planetary Scale</div>
+                <div class="component-preview">Saga orchestration, two-phase commit, and distributed transaction management across shards...</div>
+                <span class="component-phase-badge">Introduced Phase VI</span>
+            </div>
         </div>
-      </div>
-    `;
-  }).join('');
-}
 
-function selectComponent(id) {
-  selectedComponent = id;
-  const c = components.find(x => x.id === id);
-  const tc = typeConfig[c.type];
-  const phase = phases.find(p => p.id === c.phase);
+        <!-- Deep Dive Section -->
+        <div class="deep-dive">
+            <div class="deep-dive-header">
+                <h2>🎯 Deep Dive: Phase I + Core Messaging Gateway</h2>
+                <p style="color: var(--text-secondary);">System Design Interview Simulation — 0 to 10 Users</p>
+            </div>
 
-  // Update selection visual
-  document.querySelectorAll('.component-card').forEach(card => card.classList.remove('selected'));
-  event.currentTarget.classList.add('selected');
+            <!-- 0. Problem Statement -->
+            <div class="section-box">
+                <div class="section-title">📋 0. Interview Problem Statement</div>
+                <div class="problem-statement">
+                    <p style="font-size: 1.05rem; line-height: 1.6; margin-bottom: 15px;">
+                        <strong>Design the backend architecture for a real-time messaging application (WhatsApp MVP) that supports up to 10 concurrent users.</strong> The system must support one-to-one text messaging, user registration via phone number with SMS OTP verification, contact discovery from address books, and message persistence with offline delivery. Users should receive messages in near real-time when online, and queued messages must be delivered when they reconnect. Assume this begins as a monolithic deployment, but you must identify service boundaries that will later evolve into independent microservices. Design the data model, API contracts, real-time transport mechanism, authentication strategy, and deployment topology for this phase.
+                    </p>
+                    <div class="highlight-box">
+                        <strong style="color: #60a5fa;">Details to Design:</strong>
+                        <ul style="margin-top: 10px; padding-left: 20px; color: var(--text-secondary);">
+                            <li>Real-time transport: WebSocket vs SSE vs Long Polling — justify your choice</li>
+                            <li>Database schema: users, conversations, messages, and delivery status</li>
+                            <li>Message ordering and exactly-once delivery semantics</li>
+                            <li>Authentication flow: phone verification, JWT lifecycle, refresh strategy</li>
+                            <li>Offline message queueing and replay mechanism</li>
+                            <li>CAP theorem trade-offs with your chosen storage technology</li>
+                            <li>WebSocket connection state management and horizontal scaling path</li>
+                            <li>Monolith-to-microservices migration boundaries and strangler fig pattern</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
 
-  const panel = document.getElementById('detailPanel');
-  document.getElementById('detailTitle').textContent = c.name;
-  document.getElementById('detailSubtitle').textContent = `${tc.label} · ${phase.name} · Builds on: ${c.buildsOn.length ? c.buildsOn.join(', ') : 'None (Foundation)'}`;
-  document.getElementById('detailBadges').innerHTML = `
-    <span class="type-badge ${tc.class}" style="font-size: 0.9rem; padding: 8px 16px;">
-      <span style="width: 10px; height: 10px; border-radius: 50%; background: ${tc.color}; display: inline-block; margin-right: 8px;"></span>
-      ${tc.label}
-    </span>
-  `;
+            <!-- 1. Architecture Diagram Problem -->
+            <div class="section-box">
+                <div class="section-title">🏗️ 1. Architecture Diagram — Problem Format</div>
+                <div class="arch-problem">
+                    <p style="margin-bottom: 15px;">Given the following subsystem requirements, produce a detailed component architecture:</p>
+                    <ul style="padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+                        <li><strong>Client Layer:</strong> Android/iOS apps and a basic web client. Both require persistent real-time connections and REST fallback.</li>
+                        <li><strong>Edge Layer:</strong> A single load balancer / reverse proxy handling SSL termination and routing.</li>
+                        <li><strong>Application Layer:</strong> A WebSocket Manager handling persistent connections, a User Service for auth, and a Core Messaging monolith handling routing and business logic.</li>
+                        <li><strong>Data Layer:</strong> A single PostgreSQL node for persistence and Redis for session caching.</li>
+                        <li><strong>External:</strong> Firebase Cloud Messaging and APNS for push notifications when clients are offline.</li>
+                    </ul>
+                    <p style="margin-top: 15px; color: var(--text-secondary);">
+                        <strong>Task:</strong> Draw the component diagram. Define synchronous vs asynchronous interfaces between components. Specify the exact data flow for "User A sends a message to User B who is offline, then User B comes online." Identify all single points of failure and propose mitigation without adding new components.
+                    </p>
+                </div>
+                <div class="mermaid">
+graph TB
+    subgraph "Client Layer"
+        C1[Android/iOS Client<br/>Signal Protocol Client]
+        C2[Web Client<br/>React + WebSocket]
+    end
 
-  document.getElementById('detailGrid').innerHTML = `
-    <div class="detail-box" style="--box-color: #3b82f6;">
-      <h3><span style="font-size: 1.2rem;">📋</span> What is it about?</h3>
-      <p>${c.what}</p>
-      <div class="word-count">${c.what.split(/\s+/).length} words</div>
+    subgraph "Edge Layer"
+        LB[Nginx Load Balancer<br/>SSL Termination + Sticky Sessions]
+    end
+
+    subgraph "Application Layer"
+        WG[WebSocket Manager<br/>Go + Gorilla WS<br/>Connection State Map]
+        AG[REST API Gateway<br/>Kong / Nginx Proxy]
+        US[User Service<br/>Phone Auth + JWT<br/>Session Store]
+        CM[Core Messaging<br/>Message Router<br/>Delivery Ack Handler]
+    end
+
+    subgraph "Data Layer"
+        PG[(PostgreSQL 14<br/>Single Node<br/>Messages + Users)]
+        REDIS[(Redis 7<br/>Sessions + Presence<br/>TTL 24h)]
+    end
+
+    subgraph "External Services"
+        PUSH[Firebase / APNS<br/>Push Notification Bridge]
+        SMS[Twilio / AWS SNS<br/>SMS OTP Provider]
+    end
+
+    C1 -->|WSS :443| LB
+    C2 -->|WSS :443| LB
+    LB -->|Route /ws| WG
+    LB -->|Route /api| AG
+
+    AG -->|REST /auth| US
+    AG -->|REST /users| US
+    WG -->|gRPC /internal| CM
+    CM -->|SQL| PG
+    US -->|SQL| PG
+    CM -->|Redis Protocol| REDIS
+    US -->|Redis Protocol| REDIS
+    CM -->|HTTP| PUSH
+    US -->|HTTP| SMS
+
+    style CM fill:#ef4444,stroke:#fff,stroke-width:2px,color:#fff
+    style PG fill:#3b82f6,stroke:#fff,stroke-width:2px,color:#fff
+    style WG fill:#f59e0b,stroke:#fff,stroke-width:2px,color:#fff
+                </div>
+            </div>
+
+            <!-- 2. Interview Questions -->
+            <div class="section-box">
+                <div class="section-title">❓ 2. System Architect Interview Questions</div>
+                <p style="color: var(--text-secondary); margin-bottom: 15px;">You must be able to answer these fluently for Phase I implementation:</p>
+                <ol class="question-list">
+                    <li>Why WebSocket over SSE or Long Polling for the MVP, and at what user threshold does that decision get revisited?</li>
+                    <li>How do you guarantee message ordering between two users without a global clock?</li>
+                    <li>Design the complete database schema (ER diagram) for conversations, messages, and read receipts.</li>
+                    <li>How does a user reconnecting after 8 hours fetch only missed messages without full table scan?</li>
+                    <li>What is your authentication mechanism for phone verification, and how do you prevent OTP brute-forcing?</li>
+                    <li>How do you prevent duplicate message delivery when a client reconnects and retries?</li>
+                    <li>What CAP theorem trade-off are you making with a single-node PostgreSQL, and how does it fail?</li>
+                    <li>Where is WebSocket connection state stored — in-memory, Redis, or database — and what happens on server restart?</li>
+                    <li>What is your deployment strategy for this MVP, and how do you achieve zero-downtime deploys at this scale?</li>
+                    <li>Draw the exact sequence diagram for: User A sends message → User B is offline → User B opens app → message delivered.</li>
+                    <li>How do you migrate from this monolith to microservices without a big-bang rewrite?</li>
+                    <li>What are your SLIs and SLOs for message delivery latency at Phase I?</li>
+                </ol>
+            </div>
+
+            <!-- 3. Full Architecture -->
+            <div class="section-box">
+                <div class="section-title">🌐 3. Full Architecture — Interactive View</div>
+                <p style="color: var(--text-secondary); margin-bottom: 15px;">Complete Phase I topology with data flows:</p>
+                <div class="mermaid">
+sequenceDiagram
+    actor A as User A Device
+    actor B as User B Device
+    participant LB as Nginx LB
+    participant WG as WebSocket Manager
+    participant CM as Core Messaging
+    participant PG as PostgreSQL
+    participant REDIS as Redis
+    participant PUSH as FCM/APNS
+
+    Note over A,B: Phase I: 0-10 Users<br/>Message Flow — User B Offline
+
+    A->>LB: HTTPS POST /auth/verify<br/>{phone, otp}
+    LB->>WG: Upgrade to WSS /ws
+    WG->>CM: gRPC RegisterConnection(user_id, socket_id)
+    CM->>REDIS: SET presence:user:A "online" EX 300
+    CM->>PG: SELECT * FROM users WHERE phone = ?
+
+    A->>WG: WSS SendMessage<br/>{to: B, content: "Hello", client_msg_id: "uuid-v4"}
+    WG->>CM: RouteMessage(msg)
+    CM->>PG: INSERT messages ...<br/>ON CONFLICT (client_msg_id) DO NOTHING
+    CM->>REDIS: GET presence:user:B
+    REDIS-->>CM: "offline"
+    CM->>PG: INSERT pending_deliveries ...
+    CM->>PUSH: HTTP POST /fcm/send<br/>{token: B_device_token, payload: {msg_id, from:A}}
+    PUSH-->>B: Push Notification
+
+    Note over B: User B Opens App
+    B->>LB: HTTPS POST /auth/verify
+    LB->>WG: Upgrade to WSS /ws
+    WG->>CM: RegisterConnection(user_B, socket_id)
+    CM->>REDIS: SET presence:user:B "online" EX 300
+    B->>WG: WSS FetchMissedMessages<br/>{last_sequence: 0}
+    WG->>CM: GetPendingMessages(user_B, last_seq)
+    CM->>PG: SELECT * FROM messages<br/>WHERE to_user = B<br/>AND sequence > 0<br/>ORDER BY sequence ASC
+    PG-->>CM: [Message Rows]
+    CM->>B: WSS DeliverMessages<br/>[{msg_id, from:A, content, seq:1}]
+    B-->>CM: WSS AckDelivery<br/>{msg_ids: [uuid]}
+    CM->>PG: UPDATE messages SET status='delivered'<br/>WHERE id IN (...)
+    CM->>REDIS: DEL pending:user:B
+                </div>
+            </div>
+
+            <!-- 5. Non-coding Checklist -->
+            <div class="section-box">
+                <div class="section-title">✅ 5. Phase I Technical Completion Checklist</div>
+                <p style="color: var(--text-secondary); margin-bottom: 15px;">Without writing production code, complete these deliverables to mark Phase I as architecturally complete:</p>
+                <div class="checklist-grid">
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>C4 Diagrams</strong><br/><small>Context, Container, Component, Code</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>ER Diagram</strong><br/><small>Complete data model with indexes</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>OpenAPI Spec</strong><br/><small>All REST + WebSocket contracts</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Sequence Diagrams</strong><br/><small>Send, delivery, auth, reconnect</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>ADR Documents</strong><br/><small>Tech choices with trade-offs</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Capacity Planning</strong><br/><small>CPU, RAM, DB storage estimates</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Threat Model</strong><br/><small>STRIDE analysis for messaging</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>SLO Definitions</strong><br/><small>Latency, availability, error rate</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Runbooks</strong><br/><small>On-call procedures, playbooks</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Infra Topology</strong><br/><small>Docker Compose / k8s manifests</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Migration Path</strong><br/><small>Monolith → Microservices plan</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Cost Estimate</strong><br/><small>Infrastructure spend projection</small></div></div>
+                </div>
+            </div>
+
+            <!-- 6. Answers -->
+            <div class="section-box">
+                <div class="section-title">🧠 6. Architect Answers — 20-Year Google SA Perspective</div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q1: WebSocket vs SSE vs Long Polling</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>WebSocket is non-negotiable here.</strong> At Google, we learned that SSE is server-push-only; your client needs to send typing indicators, read receipts, and presence heartbeats without opening parallel connections. Long polling at 10 users works but introduces N+1 query problems and 2-5 second latency windows that destroy perceived real-timeness. WebSocket gives full-duplex over a single TCP connection with sub-100ms latency. The threshold to revisit isn't user count—it's connection count. When you hit ~65K concurrent sockets per server (file descriptor limits), you horizontal shard with sticky sessions. At 10 users, a single Gorilla WS handler on a 2-core VM handles this trivially, but you're building the correct foundation.
+                    </p>
+                </div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q2: Message Ordering Without Global Clock</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>Never rely on system timestamps.</strong> We use conversation-scoped sequence numbers. Each conversation row in PostgreSQL maintains a <code>last_sequence</code> counter. When User A sends to User B, we do: <code>UPDATE conversations SET last_sequence = last_sequence + 1 WHERE id = ? RETURNING last_sequence</code>. This gives us a strict monotonic sequence per conversation. The message is inserted with this sequence. On the client, we maintain a <code>max_received_sequence</code> per conversation; gaps trigger a repair fetch. This is how Google Chat handles ordering—logical clocks scoped to the conversation, not global Snowflake IDs which only guarantee uniqueness, not causality.
+                    </p>
+                </div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q3: Database Schema Design</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>Four core tables.</strong> <code>users</code>: id (UUID), phone (unique, indexed), name, public_key, created_at. <code>conversations</code>: id, type ('1:1' or 'group'), last_sequence, created_at. <code>participants</code>: conversation_id, user_id, last_read_sequence, joined_at. <code>messages</code>: id (UUID), conversation_id, sender_id, content (encrypted blob), sequence (unique per conversation), client_message_id (UUID, unique per conversation), status ('sent','delivered','read'), created_at. Index on <code>(conversation_id, sequence DESC)</code> for fetch efficiency. The <code>client_message_id</code> with a UNIQUE constraint on <code>(conversation_id, client_message_id)</code> gives you idempotency for free.
+                    </p>
+                </div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q4: Reconnect After 8 Hours — No Full Scan</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>Cursor-based pagination using sequence numbers.</strong> The client persists its highest known sequence number per conversation locally (SQLite on device). On reconnect, it sends <code>FetchMissedMessages {last_sequence: 42}</code>. The server queries: <code>SELECT * FROM messages WHERE conversation_id = ? AND sequence > 42 ORDER BY sequence ASC LIMIT 100</code>. This is an index-only scan on the composite index. No timestamps, no offsets. If the client has no local state (new device), we use a separate <code>device_sync_checkpoint</code> table that tracks the last global sequence the device acknowledged. This is identical to how Gmail syncs via history IDs.
+                    </p>
+                </div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q5: Phone Auth & OTP Brute-Force Prevention</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>Rate limit at multiple layers.</strong> Per-phone: max 3 OTP requests per hour, enforced in Redis with TTL 3600. Per-IP: max 10 requests per minute across all phones. OTP is 6-digit, expires in 5 minutes, stored as bcrypt hash (never plaintext). After 3 failed attempts, invalidate the OTP and require re-request. Use Twilio Verify or AWS SNS with fraud detection. JWT access token expires in 15 minutes, refresh token in 7 days (stored hashed in DB). On logout, revoke refresh token and broadcast to all connected devices to drop WS connections. At Google scale, we use FIDO2/WebAuthn, but for MVP, SMS + JWT with Redis-backed revocation lists is correct.
+                    </p>
+                </div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q6: Duplicate Prevention on Reconnect</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>Idempotency keys at the client layer.</strong> Every message sent from client carries a client-generated UUIDv4 in <code>client_message_id</code>. The database enforces <code>UNIQUE(conversation_id, client_message_id)</code>. On insert conflict, the server returns the existing message row (SELECT + RETURNING). The client treats this as success. For non-message actions (delete, edit), use the same pattern. Additionally, the server maintains an <code>idempotency_key</code> table with 24h TTL for non-database actions like push notification triggers. This dual-layer approach ensures exactly-once semantics without distributed transactions at this scale.
+                    </p>
+                </div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q7: CAP Theorem Trade-Offs</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>Single-node PostgreSQL chooses CP (Consistency over Availability).</strong> In a network partition between app and DB, the app becomes unavailable rather than serving stale data or accepting writes that might be lost. At 10 users, this is the correct choice—message integrity is more important than 99.999% uptime. The failure mode is a 500 error during DB restart; clients retry with exponential backoff. When you scale to Phase IV and shard, you move to Partition Tolerance + eventual consistency for cross-shard operations, but per-shard you remain CP. Google Spanner gives you CAP illusion with TrueTime, but that's Phase VI complexity.
+                    </p>
+                </div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q8: WebSocket Connection State Storage</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>In-memory hash map with Redis as backup.</strong> The WebSocket Manager maintains <code>map[user_id] = *Conn</code> in process memory for O(1) routing. On server restart, this is lost—acceptable at Phase I because restart takes 5 seconds and clients auto-reconnect with exponential backoff. We also write <code>SET ws:presence:user_id "server_3" EX 60</code> to Redis so other servers can check if a user is likely online elsewhere. At Phase III, we move to a distributed pub/sub (Redis Streams or NATS) for cross-server broadcast when group chats arrive. Never store socket state in PostgreSQL; the write latency destroys real-time performance.
+                    </p>
+                </div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q9: Deployment Strategy</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>Docker Compose on a single EC2 t3.medium with blue-green deployment.</strong> Nginx as reverse proxy routes traffic. PostgreSQL runs in a container with a mounted EBS volume for persistence, Redis in another. The app is a Go binary in a Distroless container. CI/CD via GitHub Actions: build image, push to ECR, SSH to server, pull new image, start on port 8081, switch Nginx upstream from 8080 to 8081, drain 8080, stop old container. This gives zero-downtime deploys without Kubernetes complexity. Health checks at <code>/health</code> verify DB and Redis connectivity. At this scale, avoid k8s—the operational overhead is a tax you don't need yet.
+                    </p>
+                </div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q10: Sequence Diagram — Offline Delivery</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>Detailed flow:</strong> (1) User A sends message with client_msg_id via WSS. (2) Core Messaging inserts to DB with sequence 5. (3) Check Redis presence for User B: returns nil. (4) Insert into <code>pending_messages</code> queue table or Redis list <code>pending:user_B</code>. (5) Trigger Push Relay with message metadata (not content, for privacy). (6) User B's device receives FCM notification, opens app. (7) App establishes WSS, sends <code>FetchMissedMessages {last_sequence: 4}</code>. (8) Server queries messages WHERE sequence > 4, returns message 5. (9) User B app displays message, sends ACK. (10) Server updates status to 'delivered', removes from pending queue. If ACK is lost, client deduplicates via client_msg_id on next reconnect.
+                    </p>
+                </div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q11: Monolith to Microservices Migration</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>Strangler Fig Pattern with API Gateway introduction.</strong> Step 1: Place Kong/Nginx in front of monolith without changing routes. Step 2: Extract User Service first—it's the most isolated bounded context. Route <code>/auth/*</code> and <code>/users/*</code> to new service, everything else to monolith. Share the PostgreSQL instance initially (no data split yet). Step 3: Extract Media Service when storage costs spike. Step 4: Extract Group Service when fan-out logic becomes complex. Step 5: Finally split Chat Service. At each step, the old monolith code is deleted (strangled). Never do a big-bang rewrite—Google learned this painfully with AdWords. Database-per-service comes last, not first.
+                    </p>
+                </div>
+
+                <div class="answer-box">
+                    <div class="answer-label">Q12: SLIs and SLOs for Phase I</div>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        <strong>Three SLIs, conservative SLOs.</strong> (1) <strong>Message Send Latency (p99):</strong> SLI = time from WSS send to DB persist. SLO = < 500ms at p99. (2) <strong>Delivery Success Rate:</strong> SLI = ratio of messages marked 'delivered' to total sent. SLO = > 99.5% within 24 hours (accounts for offline users). (3) <strong>API Availability:</strong> SLI = ratio of successful HTTP 2xx to total requests. SLO = > 99.9% excluding planned maintenance. No error budget yet at Phase I—just measurement. Use Prometheus + Grafana to track. Alert on SLO burn rate > 10% in 1 hour. These numbers are aspirational but achievable on a single node with proper connection pooling.
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="detail-box" style="--box-color: #10b981;">
-      <h3><span style="font-size: 1.2rem;">🔍</span> Why separate?</h3>
-      <p>${c.why}</p>
-      <div class="word-count">${c.why.split(/\s+/).length} words</div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <h3 class="modal-title" id="modalTitle">Component</h3>
+            <p class="modal-subtitle" id="modalSubtitle">Type • Phase</p>
+
+            <div class="detail-box">
+                <div class="detail-label">What is this component about?</div>
+                <div class="detail-text" id="modalWhat"></div>
+            </div>
+
+            <div class="detail-box">
+                <div class="detail-label">Why does it need to be separate?</div>
+                <div class="detail-text" id="modalWhy"></div>
+            </div>
+
+            <div class="detail-box">
+                <div class="detail-label">What problems does it solve?</div>
+                <div class="detail-text" id="modalProblems"></div>
+            </div>
+        </div>
     </div>
-    <div class="detail-box" style="--box-color: #f59e0b;">
-      <h3><span style="font-size: 1.2rem;">🎯</span> Problems Solved</h3>
-      <p>${c.problems}</p>
-      <div class="word-count">${c.problems.split(/\s+/).length} words</div>
-    </div>
-  `;
 
-  panel.style.setProperty('--detail-color', tc.color);
-  panel.classList.add('active');
+    <script>
+        // Component Data
+        const components = {
+            'core-messaging': {
+                title: 'Core Messaging Gateway',
+                subtitle: 'Core Service • Phase I',
+                what: 'Handles real-time message ingestion, routing, and delivery between users via persistent WebSocket connections and protocol translation.',
+                why: 'Isolated to manage connection state logic, enable independent scaling of concurrent sockets, and prevent chat logic coupling to transport.',
+                problems: 'Solves connection churn, strict message ordering, and delivery acknowledgment at scale while abstracting protocol complexity from business services and ensuring reliable multi-device fan-out.'
+            },
+            'user-service': {
+                title: 'User Identity & Auth',
+                subtitle: 'Core Service • Phase I',
+                what: 'Manages user registration, phone number verification, authentication tokens, session lifecycle, and identity resolution across all registered user devices.',
+                why: 'Isolated because authentication security patterns differ from messaging, requiring hardened access controls without impacting real-time chat latency.',
+                problems: 'Prevents unauthorized account access, isolates credential storage from message content, enables secure multi-device identity linking, and supports compliance auditing requirements.'
+            },
+            'websocket': {
+                title: 'WebSocket Connection Manager',
+                subtitle: 'Core Service • Phase I',
+                what: 'Maintains millions of persistent client connections, handles heartbeat detection, connection migration, and real-time device presence state tracking.',
+                why: 'Isolated to manage millions of long-lived TCP connections separately from stateless business logic and enable independent horizontal scaling.',
+                problems: 'Solves connection memory overhead, detects client online status instantly, gracefully handles cellular network handoffs, and enables efficient broadcast routing.'
+            },
+            'persistence': {
+                title: 'Message Persistence Store',
+                subtitle: 'Core Service • Phase I',
+                what: 'Durable storage for message history, edit logs, deletion records, and conversation metadata with strict chronological ordering and consistency guarantees.',
+                why: 'Isolated because storage semantics, retention policies, and backup requirements differ from real-time routing, allowing specialized database technology selection.',
+                problems: 'Ensures message durability during client offline periods, enables seamless history retrieval, supports compliance archiving, and maintains strict conversation state consistency.'
+            },
+            'api-gateway': {
+                title: 'API Gateway',
+                subtitle: 'Infrastructure • Phase I',
+                what: 'Entry point for all client requests providing SSL termination, rate limiting, intelligent request routing, and basic DDoS protection.',
+                why: 'Separated to centralize cross-cutting concerns so business services focus on domain logic without duplicating security handling everywhere.',
+                problems: 'Prevents backend service overload, enforces throttling policies, provides unified SSL certificate management, and enables centralized request analytics capture.'
+            },
+            'push': {
+                title: 'Push Notification Relay',
+                subtitle: 'Core Service • Phase I',
+                what: 'Bridges internal message events to Apple Push Notification Service and Firebase Cloud Messaging for alerting offline user devices.',
+                why: 'Isolated because it integrates with external vendor APIs, handles complex retry logic, and manages device token registries independently.',
+                problems: 'Ensures message awareness when apps are backgrounded, reduces battery drain via centralized push management, and handles device token churn gracefully.'
+            },
+            'contact': {
+                title: 'Contact Discovery Service',
+                subtitle: 'Core Service • Phase II',
+                what: 'Matches phone numbers from user address books to registered users while respecting privacy preferences, consent settings, and data minimization.',
+                why: 'Separated due to high read volume, privacy sensitivity, and need for asynchronous batch processing of hashed contact lists efficiently.',
+                problems: 'Solves privacy-preserving contact matching efficiently, reduces heavy load on core authentication systems, and enables incremental address book synchronization across user devices.'
+            },
+            'media': {
+                title: 'Media Storage & Processing',
+                subtitle: 'Feature Service • Phase II',
+                what: 'Stores encrypted images, video, audio, and documents while handling compression, thumbnail generation, and CDN distribution for clients.',
+                why: 'Separated due to massive storage footprint, CPU-intensive transcoding workloads, and fundamentally different scaling patterns compared to text metadata.',
+                problems: 'Offloads blob traffic from core databases, reduces bandwidth via smart compression, enables geographic content caching, and accelerates media downloads globally.'
+            },
+            'group': {
+                title: 'Group Management Service',
+                subtitle: 'Core Service • Phase II',
+                what: 'Handles group creation, membership changes, admin privileges, group metadata updates, and broadcast message fan-out coordination logic.',
+                why: 'Separated because group state is complex CRUD with different consistency needs than one-to-one messaging and requires specialized fan-out.',
+                problems: 'Solves membership synchronization across all clients, prevents group metadata changes from blocking individual message flows, and enforces role-based permissions.'
+            },
+            'redis': {
+                title: 'Redis Cache Cluster',
+                subtitle: 'Infrastructure • Phase II',
+                what: 'In-memory store for hot data including user sessions, recent conversations, presence status, and distributed rate limit counters.',
+                why: 'Separated to provide sub-millisecond access patterns distinct from persistent storage and to reduce database load for repetitive queries.',
+                problems: 'Accelerates frequent data lookups, reduces database connection pool pressure, enables real-time presence aggregation, and supports high-throughput counter operations.'
+            },
+            'queue': {
+                title: 'Distributed Message Queue',
+                subtitle: 'Infrastructure • Phase II',
+                what: 'Async middleware decoupling services using topics and queues for message delivery events, media processing, and notification dispatching.',
+                why: 'Isolated because buffering and backpressure management require specialized infrastructure with different durability and throughput characteristics than synchronous APIs.',
+                problems: 'Absorbs traffic spikes gracefully, enables service independence during rolling deployments, and guarantees at-least-once processing for critical business events.'
+            },
+            'e2ee': {
+                title: 'End-to-End Encryption Service',
+                subtitle: 'Core Service • Phase III',
+                what: 'Implements Signal Protocol for key generation, pre-key management, session establishment, and cryptographic envelope handling for all messages.',
+                why: 'Cryptographic operations are CPU-intensive and security-critical; separation enables hardware security module integration and strict security audit isolation.',
+                problems: 'Guarantees servers cannot read message content, protects against network interception, and provides both forward secrecy and future secrecy guarantees.'
+            },
+            'status': {
+                title: 'Status / Stories Service',
+                subtitle: 'Feature Service • Phase III',
+                what: 'Ephemeral content sharing with twenty-four hour expiration, privacy allow/block lists, and media pipeline integration for user stories.',
+                why: 'Isolated due to high write throughput, ephemeral TTL requirements, and distinct fan-out patterns compared to persistent messaging.',
+                problems: 'Enables privacy-controlled content sharing, automates expiration cleanup, and isolates story traffic from critical message delivery paths.'
+            },
+            'calls': {
+                title: 'Voice/Video Signaling',
+                subtitle: 'Feature Service • Phase III',
+                what: 'Orchestrates call setup, ICE candidate exchange, SDP negotiation, and call state management for VoIP and video sessions.',
+                why: 'Separated because real-time media signaling has different latency requirements and failure modes than asynchronous text chat messaging.',
+                problems: 'Enables low-latency call establishment, manages ring states across multiple user devices, and decouples media relay infrastructure from chat.'
+            },
+            'search': {
+                title: 'Search & Indexing Service',
+                subtitle: 'Feature Service • Phase III',
+                what: 'Indexes message content, media captions, and contact names for fast full-text search within conversations and message archives.',
+                why: 'Isolated because search indexing is write-heavy with eventual consistency needs vastly different from transactional message storage requirements.',
+                problems: 'Enables fast message retrieval without expensive table scans, supports fuzzy matching algorithms, and scales search independently from message ingestion.'
+            },
+            'monitoring': {
+                title: 'Monitoring & Observability',
+                subtitle: 'Monitoring • Phase III',
+                what: 'Collects metrics, distributed traces, and structured logs across all services for real-time health monitoring and incident response.',
+                why: 'Isolated because telemetry ingestion is high-volume and analysis workloads must not impact production service performance or availability.',
+                problems: 'Enables rapid incident diagnosis, provides performance baselines for scaling decisions, and alerts on anomaly detection automatically across infrastructure.'
+            },
+            'web-sync': {
+                title: 'Web/Desktop Sync',
+                subtitle: 'Feature Service • Phase III',
+                what: 'Multi-device message synchronization, QR code pairing, and state reconciliation between mobile primary and linked companion devices.',
+                why: 'Isolated due to complex state reconciliation logic, different security models for paired devices, and independent release cycles.',
+                problems: 'Enables seamless multi-device experience, maintains end-to-end encryption across linked devices, and supports independent web client updates.'
+            },
+            'analytics': {
+                title: 'Analytics Event Pipeline',
+                subtitle: 'Analytics • Phase IV',
+                what: 'Ingests user behavior events, message throughput stats, and feature usage into data warehouse for deep product insights.',
+                why: 'Separated due to batch-oriented high-throughput processing needs and to prevent heavy analytical queries from impacting transactional systems.',
+                problems: 'Drives product decisions via usage patterns, identifies scaling bottlenecks proactively, and supports business intelligence reporting without impacting operations.'
+            },
+            'cdn': {
+                title: 'CDN & Edge Distribution',
+                subtitle: 'Infrastructure • Phase IV',
+                what: 'Geographic distribution of media and static content with edge caching, origin shield, and cache invalidation strategies.',
+                why: 'Isolated because edge caching requires global PoP infrastructure and different operational expertise than application server management.',
+                problems: 'Reduces origin server load dramatically, decreases media download latency globally, and improves user experience across distant geographies.'
+            },
+            'backup': {
+                title: 'Backup & Restore Service',
+                subtitle: 'Feature Service • Phase IV',
+                what: 'Manages encrypted chat history backups to cloud storage and coordinates key-based restoration when users switch or lose devices.',
+                why: 'Isolated due to large data volumes, background processing needs, and specific integrations with third-party cloud storage providers.',
+                problems: 'Prevents permanent data loss on device changes, enables user-controlled encryption for backups, and offloads long-running transfers from core chat.'
+            },
+            'sharding': {
+                title: 'Database Sharding Layer',
+                subtitle: 'Infrastructure • Phase IV',
+                what: 'Horizontal partitioning strategy, shard routing logic, and rebalancing orchestration for conversation and message data.',
+                why: 'Isolated to encapsulate complex partitioning algorithms, cross-shard query coordination, and data migration workflows independently.',
+                problems: 'Enables horizontal database scaling beyond single-node limits, distributes write load evenly, and supports tenant isolation requirements.'
+            },
+            'alerting': {
+                title: 'Alerting & Incident Response',
+                subtitle: 'Monitoring • Phase IV',
+                what: 'Automated anomaly detection, paging integration, runbook automation, and post-mortem tracking for operational excellence.',
+                why: 'Isolated to provide independent operational tooling lifecycle and prevent monitoring failures from cascading into production outages.',
+                problems: 'Reduces mean time to recovery, standardizes incident response procedures, and ensures operational accountability across engineering teams.'
+            },
+            'business-api': {
+                title: 'WhatsApp Business API',
+                subtitle: 'Business • Phase V',
+                what: 'Dedicated endpoint for business accounts to send templated messages, manage product catalogs, and integrate CRM or chatbot platforms.',
+                why: 'Separated to enforce distinct rate limits, compliance rules, and authentication models for enterprise versus consumer traffic patterns.',
+                problems: 'Enables B2B monetization streams, isolates heavy enterprise load from consumer chat, and provides guaranteed SLAs for business integrations.'
+            },
+            'multi-region': {
+                title: 'Multi-Region Orchestrator',
+                subtitle: 'Infrastructure • Phase V',
+                what: 'Cross-region deployment, traffic steering, data residency compliance, and automated disaster recovery orchestration.',
+                why: 'Isolated because global topology management requires specialized tooling distinct from application business logic and local deployment workflows.',
+                problems: 'Ensures regulatory data residency compliance, reduces latency for distant users, and provides automatic failover during regional outages.'
+            },
+            'rate-limit': {
+                title: 'Rate Limiting & Anti-Spam',
+                subtitle: 'Business • Phase V',
+                what: 'Enforces request quotas, detects abusive traffic patterns, and filters spam using behavioral heuristics and reputation scoring systems.',
+                why: 'Isolated to protect backend services uniformly and enable rapid security rule updates without deploying changes to business microservices.',
+                problems: 'Prevents service abuse and infrastructure cost inflation from malicious traffic while maintaining platform quality, security, and user trust.'
+            },
+            'dashboards': {
+                title: 'Real-Time Dashboards',
+                subtitle: 'Analytics • Phase V',
+                what: 'Live operational dashboards for business metrics, usage patterns, and infrastructure health with sub-second refresh rates.',
+                why: 'Isolated due to specialized stream processing requirements and to prevent dashboard queries from impacting transactional data pipelines.',
+                problems: 'Provides instant visibility into system health, enables data-driven capacity planning, and supports executive business reporting needs.'
+            },
+            'reply': {
+                title: 'Reply & Threading Engine',
+                subtitle: 'Core • Phase V',
+                what: 'Message threading, reply chains, context preservation, and conversation branching logic for complex discussion flows.',
+                why: 'Isolated because threading introduces graph-like data structures and recursive query patterns distinct from flat message streams.',
+                problems: 'Enables structured conversations, preserves reply context across devices, and supports threaded notification routing preferences.'
+            },
+            'payments': {
+                title: 'Payment Processing Service',
+                subtitle: 'Business • Phase VI',
+                what: 'Handles payment method linking, transaction authorization, peer-to-peer fund transfers, and compliance with strict financial regulations.',
+                why: 'Isolated due to strict PCI-DSS requirements, detailed financial audit trails, and integration with banking and payment provider APIs.',
+                problems: 'Enables secure peer-to-peer payments, maintains strict transaction integrity, isolates financial risk from messaging, and ensures regulatory compliance.'
+            },
+            'ml': {
+                title: 'ML Inference Platform',
+                subtitle: 'Feature • Phase VI',
+                what: 'Real-time spam detection, content moderation, smart replies, and predictive caching using trained neural models.',
+                why: 'Isolated because ML inference requires GPU/TPU resources, model versioning, and A/B testing infrastructure unlike standard services.',
+                problems: 'Automates content policy enforcement, reduces manual moderation costs, improves user experience via predictions, and detects emergent abuse patterns.'
+            },
+            'global-cdn': {
+                title: 'Global Edge Network',
+                subtitle: 'Infrastructure • Phase VI',
+                what: 'Planetary-scale edge nodes, Anycast routing, DDoS scrubbing, and TLS termination at edge for sub-50ms latency.',
+                why: 'Isolated because edge network operations require BGP expertise, peering agreements, and physical infrastructure management.',
+                problems: 'Absorbs volumetric DDoS attacks before reaching origin, terminates TLS closer to users, and enables global low-latency presence.'
+            },
+            'cross-shard': {
+                title: 'Cross-Shard Transaction Coordinator',
+                subtitle: 'Infrastructure • Phase VI',
+                what: 'Saga orchestration, two-phase commit, and distributed transaction management across database shards and regions.',
+                why: 'Isolated to encapsulate complex distributed consensus logic and provide reusable transaction primitives for all business services.',
+                problems: 'Maintains data consistency across distributed partitions, enables global payment settlement, and automates transaction failure recovery.'
+            }
+        };
 
-  setTimeout(() => {
-    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, 100);
-}
+        let currentPhase = 'all';
+        let currentType = 'all';
 
-function closeDetail() {
-  document.getElementById('detailPanel').classList.remove('active');
-  selectedComponent = null;
-  document.querySelectorAll('.component-card').forEach(card => card.classList.remove('selected'));
-}
+        function filterPhase(phase) {
+            currentPhase = phase;
+            document.querySelectorAll('.phase-card').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.phase-card[data-phase="${phase}"]`).classList.add('active');
+            applyFilters();
+        }
 
-init();
-</script>
+        function filterType(type) {
+            currentType = type;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            applyFilters();
+        }
 
+        function applyFilters() {
+            document.querySelectorAll('.component-item').forEach(item => {
+                const itemPhase = item.getAttribute('data-phase');
+                const itemType = item.getAttribute('data-type');
+                const phaseMatch = currentPhase === 'all' || itemPhase == currentPhase;
+                const typeMatch = currentType === 'all' || itemType === currentType;
+                item.style.display = phaseMatch && typeMatch ? 'block' : 'none';
+            });
+        }
+
+        function openModal(id) {
+            const comp = components[id];
+            if (!comp) return;
+            document.getElementById('modalTitle').textContent = comp.title;
+            document.getElementById('modalSubtitle').textContent = comp.subtitle;
+            document.getElementById('modalWhat').textContent = comp.what;
+            document.getElementById('modalWhy').textContent = comp.why;
+            document.getElementById('modalProblems').textContent = comp.problems;
+            document.getElementById('modalOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(e) {
+            if (e && e.target !== document.getElementById('modalOverlay') && e.target.className !== 'modal-close') return;
+            document.getElementById('modalOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Initialize Mermaid
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'dark',
+            securityLevel: 'loose',
+            themeVariables: {
+                primaryColor: '#1e293b',
+                primaryTextColor: '#f1f5f9',
+                primaryBorderColor: '#334155',
+                lineColor: '#94a3b8',
+                secondaryColor: '#0f172a',
+                tertiaryColor: '#27354f',
+                fontFamily: 'Segoe UI, sans-serif'
+            }
+        });
+    </script>
 </body>
 </html>
