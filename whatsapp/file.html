@@ -528,37 +528,37 @@
         <div class="phase-carousel" id="phaseCarousel">
             <div class="phase-card active" data-phase="1" onclick="filterPhase(1)">
                 <div class="phase-number">Phase I</div>
-                <div class="phase-range">0 → 10 Users</div>
+                <div class="phase-range">0 to 10 Users</div>
                 <div class="phase-desc">MVP foundation with core messaging, auth, and basic persistence. Monolith-friendly boundaries.</div>
                 <span class="component-count">6 Components</span>
             </div>
             <div class="phase-card" data-phase="2" onclick="filterPhase(2)">
                 <div class="phase-number">Phase II</div>
-                <div class="phase-range">10 → 100 Users</div>
+                <div class="phase-range">10 to 100 Users</div>
                 <div class="phase-desc">Media sharing, group chats, caching layer, and async processing introduced.</div>
                 <span class="component-count">5 Components</span>
             </div>
             <div class="phase-card" data-phase="3" onclick="filterPhase(3)">
                 <div class="phase-number">Phase III</div>
-                <div class="phase-range">100 → 1,000 Users</div>
+                <div class="phase-range">100 to 1,000 Users</div>
                 <div class="phase-desc">Status/stories, voice/video signaling, search, web sync, and observability.</div>
                 <span class="component-count">6 Components</span>
             </div>
             <div class="phase-card" data-phase="4" onclick="filterPhase(4)">
                 <div class="phase-number">Phase IV</div>
-                <div class="phase-range">1,000 → 10,000 Users</div>
+                <div class="phase-range">1,000 to 10,000 Users</div>
                 <div class="phase-desc">Database sharding, CDN, analytics pipeline, backup/restore, and advanced monitoring.</div>
                 <span class="component-count">5 Components</span>
             </div>
             <div class="phase-card" data-phase="5" onclick="filterPhase(5)">
                 <div class="phase-number">Phase V</div>
-                <div class="phase-range">10,000 → 100,000 Users</div>
+                <div class="phase-range">10,000 to 100,000 Users</div>
                 <div class="phase-desc">Business API, multi-region, rate limiting, anti-spam, and real-time dashboards.</div>
                 <span class="component-count">5 Components</span>
             </div>
             <div class="phase-card" data-phase="6" onclick="filterPhase(6)">
                 <div class="phase-number">Phase VI</div>
-                <div class="phase-range">100,000 → 1M Users</div>
+                <div class="phase-range">100,000 to 1M Users</div>
                 <div class="phase-desc">Payments, global CDN, advanced ML, cross-shard transactions, and planetary scale.</div>
                 <span class="component-count">4 Components</span>
             </div>
@@ -567,12 +567,12 @@
         <!-- Filter Tabs -->
         <div class="filter-tabs">
             <button class="filter-btn active" onclick="filterType('all')">All Types</button>
-            <button class="filter-btn" onclick="filterType('core')">🔴 Core</button>
-            <button class="filter-btn" onclick="filterType('infra')">🔵 Infrastructure</button>
-            <button class="filter-btn" onclick="filterType('monitor')">🟢 Monitoring</button>
-            <button class="filter-btn" onclick="filterType('analytics')">🟡 Analytics</button>
-            <button class="filter-btn" onclick="filterType('business')">🟣 Business</button>
-            <button class="filter-btn" onclick="filterType('feature')">🩷 Feature</button>
+            <button class="filter-btn" onclick="filterType('core')">Core</button>
+            <button class="filter-btn" onclick="filterType('infra')">Infrastructure</button>
+            <button class="filter-btn" onclick="filterType('monitor')">Monitoring</button>
+            <button class="filter-btn" onclick="filterType('analytics')">Analytics</button>
+            <button class="filter-btn" onclick="filterType('business')">Business</button>
+            <button class="filter-btn" onclick="filterType('feature')">Feature</button>
         </div>
 
         <!-- Components Grid -->
@@ -583,17 +583,17 @@
                     <div class="component-name">Core Messaging Gateway</div>
                     <span class="component-type">Core</span>
                 </div>
-                <div class="component-phase">Phase I • Foundation Layer</div>
+                <div class="component-phase">Phase I - Foundation Layer</div>
                 <div class="component-preview">Real-time message ingestion, routing, and delivery via persistent WebSocket connections...</div>
                 <span class="component-phase-badge">Introduced Phase I</span>
             </div>
 
             <div class="component-item type-core" data-phase="1" data-type="core" onclick="openModal('user-service')">
                 <div class="component-header">
-                    <div class="component-name">User Identity & Auth</div>
+                    <div class="component-name">User Identity and Auth</div>
                     <span class="component-type">Core</span>
                 </div>
-                <div class="component-phase">Phase I • Foundation Layer</div>
+                <div class="component-phase">Phase I - Foundation Layer</div>
                 <div class="component-preview">Registration, phone verification, tokens, session lifecycle, and identity resolution...</div>
                 <span class="component-phase-badge">Introduced Phase I</span>
             </div>
@@ -603,7 +603,7 @@
                     <div class="component-name">WebSocket Connection Manager</div>
                     <span class="component-type">Core</span>
                 </div>
-                <div class="component-phase">Phase I • Foundation Layer</div>
+                <div class="component-phase">Phase I - Foundation Layer</div>
                 <div class="component-preview">Maintains persistent client connections, heartbeats, connection migration, presence...</div>
                 <span class="component-phase-badge">Introduced Phase I</span>
             </div>
@@ -613,7 +613,7 @@
                     <div class="component-name">Message Persistence Store</div>
                     <span class="component-type">Core</span>
                 </div>
-                <div class="component-phase">Phase I • Foundation Layer</div>
+                <div class="component-phase">Phase I - Foundation Layer</div>
                 <div class="component-preview">Durable storage for history, edit logs, deletion records, and conversation metadata...</div>
                 <span class="component-phase-badge">Introduced Phase I</span>
             </div>
@@ -623,7 +623,7 @@
                     <div class="component-name">API Gateway</div>
                     <span class="component-type">Infra</span>
                 </div>
-                <div class="component-phase">Phase I • Edge Layer</div>
+                <div class="component-phase">Phase I - Edge Layer</div>
                 <div class="component-preview">SSL termination, rate limiting, request routing, and basic DDoS protection...</div>
                 <span class="component-phase-badge">Introduced Phase I</span>
             </div>
@@ -633,7 +633,7 @@
                     <div class="component-name">Push Notification Relay</div>
                     <span class="component-type">Core</span>
                 </div>
-                <div class="component-phase">Phase I • Foundation Layer</div>
+                <div class="component-phase">Phase I - Foundation Layer</div>
                 <div class="component-preview">Bridges internal events to FCM/APNS for offline user alerts and device token management...</div>
                 <span class="component-phase-badge">Introduced Phase I</span>
             </div>
@@ -644,17 +644,17 @@
                     <div class="component-name">Contact Discovery Service</div>
                     <span class="component-type">Core</span>
                 </div>
-                <div class="component-phase">Phase II • Scaling Layer</div>
+                <div class="component-phase">Phase II - Scaling Layer</div>
                 <div class="component-preview">Matches phone numbers to registered users while respecting privacy and consent...</div>
                 <span class="component-phase-badge">Introduced Phase II</span>
             </div>
 
             <div class="component-item type-feature" data-phase="2" data-type="feature" onclick="openModal('media')">
                 <div class="component-header">
-                    <div class="component-name">Media Storage & Processing</div>
+                    <div class="component-name">Media Storage and Processing</div>
                     <span class="component-type">Feature</span>
                 </div>
-                <div class="component-phase">Phase II • Scaling Layer</div>
+                <div class="component-phase">Phase II - Scaling Layer</div>
                 <div class="component-preview">Encrypted media storage, compression, thumbnail generation, and CDN distribution...</div>
                 <span class="component-phase-badge">Introduced Phase II</span>
             </div>
@@ -664,7 +664,7 @@
                     <div class="component-name">Group Management Service</div>
                     <span class="component-type">Core</span>
                 </div>
-                <div class="component-phase">Phase II • Scaling Layer</div>
+                <div class="component-phase">Phase II - Scaling Layer</div>
                 <div class="component-preview">Group creation, membership changes, admin privileges, metadata, and broadcast fan-out...</div>
                 <span class="component-phase-badge">Introduced Phase II</span>
             </div>
@@ -674,7 +674,7 @@
                     <div class="component-name">Redis Cache Cluster</div>
                     <span class="component-type">Infra</span>
                 </div>
-                <div class="component-phase">Phase II • Scaling Layer</div>
+                <div class="component-phase">Phase II - Scaling Layer</div>
                 <div class="component-preview">In-memory store for sessions, recent conversations, presence status, and rate limit counters...</div>
                 <span class="component-phase-badge">Introduced Phase II</span>
             </div>
@@ -684,7 +684,7 @@
                     <div class="component-name">Distributed Message Queue</div>
                     <span class="component-type">Infra</span>
                 </div>
-                <div class="component-phase">Phase II • Scaling Layer</div>
+                <div class="component-phase">Phase II - Scaling Layer</div>
                 <div class="component-preview">Async middleware decoupling services for delivery events, media processing, notifications...</div>
                 <span class="component-phase-badge">Introduced Phase II</span>
             </div>
@@ -695,7 +695,7 @@
                     <div class="component-name">End-to-End Encryption Service</div>
                     <span class="component-type">Core</span>
                 </div>
-                <div class="component-phase">Phase III • Feature Layer</div>
+                <div class="component-phase">Phase III - Feature Layer</div>
                 <div class="component-preview">Signal Protocol implementation for key generation, pre-key management, and cryptographic envelopes...</div>
                 <span class="component-phase-badge">Introduced Phase III</span>
             </div>
@@ -705,7 +705,7 @@
                     <div class="component-name">Status / Stories Service</div>
                     <span class="component-type">Feature</span>
                 </div>
-                <div class="component-phase">Phase III • Feature Layer</div>
+                <div class="component-phase">Phase III - Feature Layer</div>
                 <div class="component-preview">Ephemeral content sharing with 24h expiration, privacy lists, and media pipeline integration...</div>
                 <span class="component-phase-badge">Introduced Phase III</span>
             </div>
@@ -715,27 +715,27 @@
                     <div class="component-name">Voice/Video Signaling</div>
                     <span class="component-type">Feature</span>
                 </div>
-                <div class="component-phase">Phase III • Feature Layer</div>
+                <div class="component-phase">Phase III - Feature Layer</div>
                 <div class="component-preview">Call setup, ICE exchange, SDP negotiation, and ring state management for VoIP...</div>
                 <span class="component-phase-badge">Introduced Phase III</span>
             </div>
 
             <div class="component-item type-feature" data-phase="3" data-type="feature" onclick="openModal('search')">
                 <div class="component-header">
-                    <div class="component-name">Search & Indexing Service</div>
+                    <div class="component-name">Search and Indexing Service</div>
                     <span class="component-type">Feature</span>
                 </div>
-                <div class="component-phase">Phase III • Feature Layer</div>
+                <div class="component-phase">Phase III - Feature Layer</div>
                 <div class="component-preview">Full-text search across messages, captions, and contacts with fuzzy matching...</div>
                 <span class="component-phase-badge">Introduced Phase III</span>
             </div>
 
             <div class="component-item type-monitor" data-phase="3" data-type="monitor" onclick="openModal('monitoring')">
                 <div class="component-header">
-                    <div class="component-name">Monitoring & Observability</div>
+                    <div class="component-name">Monitoring and Observability</div>
                     <span class="component-type">Monitor</span>
                 </div>
-                <div class="component-phase">Phase III • Ops Layer</div>
+                <div class="component-phase">Phase III - Ops Layer</div>
                 <div class="component-preview">Metrics collection, distributed traces, structured logs, and health monitoring...</div>
                 <span class="component-phase-badge">Introduced Phase III</span>
             </div>
@@ -745,7 +745,7 @@
                     <div class="component-name">Web/Desktop Sync</div>
                     <span class="component-type">Feature</span>
                 </div>
-                <div class="component-phase">Phase III • Feature Layer</div>
+                <div class="component-phase">Phase III - Feature Layer</div>
                 <div class="component-preview">Multi-device message synchronization, QR pairing, and state reconciliation...</div>
                 <span class="component-phase-badge">Introduced Phase III</span>
             </div>
@@ -756,27 +756,27 @@
                     <div class="component-name">Analytics Event Pipeline</div>
                     <span class="component-type">Analytics</span>
                 </div>
-                <div class="component-phase">Phase IV • Growth Layer</div>
+                <div class="component-phase">Phase IV - Growth Layer</div>
                 <div class="component-preview">High-throughput ingestion of behavior events into data warehouse for product insights...</div>
                 <span class="component-phase-badge">Introduced Phase IV</span>
             </div>
 
             <div class="component-item type-infra" data-phase="4" data-type="infra" onclick="openModal('cdn')">
                 <div class="component-header">
-                    <div class="component-name">CDN & Edge Distribution</div>
+                    <div class="component-name">CDN and Edge Distribution</div>
                     <span class="component-type">Infra</span>
                 </div>
-                <div class="component-phase">Phase IV • Growth Layer</div>
+                <div class="component-phase">Phase IV - Growth Layer</div>
                 <div class="component-preview">Geographic distribution of media and static content with edge caching and origin shield...</div>
                 <span class="component-phase-badge">Introduced Phase IV</span>
             </div>
 
             <div class="component-item type-feature" data-phase="4" data-type="feature" onclick="openModal('backup')">
                 <div class="component-header">
-                    <div class="component-name">Backup & Restore Service</div>
+                    <div class="component-name">Backup and Restore Service</div>
                     <span class="component-type">Feature</span>
                 </div>
-                <div class="component-phase">Phase IV • Growth Layer</div>
+                <div class="component-phase">Phase IV - Growth Layer</div>
                 <div class="component-preview">Encrypted chat history backups to cloud storage and key-based device migration...</div>
                 <span class="component-phase-badge">Introduced Phase IV</span>
             </div>
@@ -786,17 +786,17 @@
                     <div class="component-name">Database Sharding Layer</div>
                     <span class="component-type">Infra</span>
                 </div>
-                <div class="component-phase">Phase IV • Growth Layer</div>
+                <div class="component-phase">Phase IV - Growth Layer</div>
                 <div class="component-preview">Horizontal partitioning strategy, shard routing logic, and rebalancing orchestration...</div>
                 <span class="component-phase-badge">Introduced Phase IV</span>
             </div>
 
             <div class="component-item type-monitor" data-phase="4" data-type="monitor" onclick="openModal('alerting')">
                 <div class="component-header">
-                    <div class="component-name">Alerting & Incident Response</div>
+                    <div class="component-name">Alerting and Incident Response</div>
                     <span class="component-type">Monitor</span>
                 </div>
-                <div class="component-phase">Phase IV • Ops Layer</div>
+                <div class="component-phase">Phase IV - Ops Layer</div>
                 <div class="component-preview">Automated anomaly detection, paging integration, runbook automation, and post-mortems...</div>
                 <span class="component-phase-badge">Introduced Phase IV</span>
             </div>
@@ -807,7 +807,7 @@
                     <div class="component-name">WhatsApp Business API</div>
                     <span class="component-type">Business</span>
                 </div>
-                <div class="component-phase">Phase V • Enterprise Layer</div>
+                <div class="component-phase">Phase V - Enterprise Layer</div>
                 <div class="component-preview">Dedicated endpoints for business accounts, templated messages, catalog management, CRM integration...</div>
                 <span class="component-phase-badge">Introduced Phase V</span>
             </div>
@@ -817,17 +817,17 @@
                     <div class="component-name">Multi-Region Orchestrator</div>
                     <span class="component-type">Infra</span>
                 </div>
-                <div class="component-phase">Phase V • Enterprise Layer</div>
+                <div class="component-phase">Phase V - Enterprise Layer</div>
                 <div class="component-preview">Cross-region deployment, traffic steering, data residency compliance, and disaster recovery...</div>
                 <span class="component-phase-badge">Introduced Phase V</span>
             </div>
 
             <div class="component-item type-business" data-phase="5" data-type="business" onclick="openModal('rate-limit')">
                 <div class="component-header">
-                    <div class="component-name">Rate Limiting & Anti-Spam</div>
+                    <div class="component-name">Rate Limiting and Anti-Spam</div>
                     <span class="component-type">Business</span>
                 </div>
-                <div class="component-phase">Phase V • Enterprise Layer</div>
+                <div class="component-phase">Phase V - Enterprise Layer</div>
                 <div class="component-preview">Request quotas, abuse detection, behavioral heuristics, reputation scoring, and spam filtering...</div>
                 <span class="component-phase-badge">Introduced Phase V</span>
             </div>
@@ -837,17 +837,17 @@
                     <div class="component-name">Real-Time Dashboards</div>
                     <span class="component-type">Analytics</span>
                 </div>
-                <div class="component-phase">Phase V • Enterprise Layer</div>
+                <div class="component-phase">Phase V - Enterprise Layer</div>
                 <div class="component-preview">Live operational dashboards for business metrics, usage patterns, and infrastructure health...</div>
                 <span class="component-phase-badge">Introduced Phase V</span>
             </div>
 
             <div class="component-item type-core" data-phase="5" data-type="core" onclick="openModal('reply')">
                 <div class="component-header">
-                    <div class="component-name">Reply & Threading Engine</div>
+                    <div class="component-name">Reply and Threading Engine</div>
                     <span class="component-type">Core</span>
                 </div>
-                <div class="component-phase">Phase V • Enterprise Layer</div>
+                <div class="component-phase">Phase V - Enterprise Layer</div>
                 <div class="component-preview">Message threading, reply chains, context preservation, and conversation branching logic...</div>
                 <span class="component-phase-badge">Introduced Phase V</span>
             </div>
@@ -858,7 +858,7 @@
                     <div class="component-name">Payment Processing Service</div>
                     <span class="component-type">Business</span>
                 </div>
-                <div class="component-phase">Phase VI • Planetary Scale</div>
+                <div class="component-phase">Phase VI - Planetary Scale</div>
                 <div class="component-preview">UPI/payment linking, transaction authorization, fund transfers, and financial compliance...</div>
                 <span class="component-phase-badge">Introduced Phase VI</span>
             </div>
@@ -868,7 +868,7 @@
                     <div class="component-name">ML Inference Platform</div>
                     <span class="component-type">Feature</span>
                 </div>
-                <div class="component-phase">Phase VI • Planetary Scale</div>
+                <div class="component-phase">Phase VI - Planetary Scale</div>
                 <div class="component-preview">Real-time spam detection, content moderation, smart replies, and predictive caching...</div>
                 <span class="component-phase-badge">Introduced Phase VI</span>
             </div>
@@ -878,7 +878,7 @@
                     <div class="component-name">Global Edge Network</div>
                     <span class="component-type">Infra</span>
                 </div>
-                <div class="component-phase">Phase VI • Planetary Scale</div>
+                <div class="component-phase">Phase VI - Planetary Scale</div>
                 <div class="component-preview">Planetary-scale edge nodes, Anycast routing, DDoS scrubbing, and TLS termination at edge...</div>
                 <span class="component-phase-badge">Introduced Phase VI</span>
             </div>
@@ -888,7 +888,7 @@
                     <div class="component-name">Cross-Shard Transaction Coordinator</div>
                     <span class="component-type">Infra</span>
                 </div>
-                <div class="component-phase">Phase VI • Planetary Scale</div>
+                <div class="component-phase">Phase VI - Planetary Scale</div>
                 <div class="component-preview">Saga orchestration, two-phase commit, and distributed transaction management across shards...</div>
                 <span class="component-phase-badge">Introduced Phase VI</span>
             </div>
@@ -897,13 +897,13 @@
         <!-- Deep Dive Section -->
         <div class="deep-dive">
             <div class="deep-dive-header">
-                <h2>🎯 Deep Dive: Phase I + Core Messaging Gateway</h2>
-                <p style="color: var(--text-secondary);">System Design Interview Simulation — 0 to 10 Users</p>
+                <h2>Deep Dive: Phase I + Core Messaging Gateway</h2>
+                <p style="color: var(--text-secondary);">System Design Interview Simulation - 0 to 10 Users</p>
             </div>
 
             <!-- 0. Problem Statement -->
             <div class="section-box">
-                <div class="section-title">📋 0. Interview Problem Statement</div>
+                <div class="section-title">0. Interview Problem Statement</div>
                 <div class="problem-statement">
                     <p style="font-size: 1.05rem; line-height: 1.6; margin-bottom: 15px;">
                         <strong>Design the backend architecture for a real-time messaging application (WhatsApp MVP) that supports up to 10 concurrent users.</strong> The system must support one-to-one text messaging, user registration via phone number with SMS OTP verification, contact discovery from address books, and message persistence with offline delivery. Users should receive messages in near real-time when online, and queued messages must be delivered when they reconnect. Assume this begins as a monolithic deployment, but you must identify service boundaries that will later evolve into independent microservices. Design the data model, API contracts, real-time transport mechanism, authentication strategy, and deployment topology for this phase.
@@ -911,7 +911,7 @@
                     <div class="highlight-box">
                         <strong style="color: #60a5fa;">Details to Design:</strong>
                         <ul style="margin-top: 10px; padding-left: 20px; color: var(--text-secondary);">
-                            <li>Real-time transport: WebSocket vs SSE vs Long Polling — justify your choice</li>
+                            <li>Real-time transport: WebSocket vs SSE vs Long Polling - justify your choice</li>
                             <li>Database schema: users, conversations, messages, and delivery status</li>
                             <li>Message ordering and exactly-once delivery semantics</li>
                             <li>Authentication flow: phone verification, JWT lifecycle, refresh strategy</li>
@@ -926,7 +926,7 @@
 
             <!-- 1. Architecture Diagram Problem -->
             <div class="section-box">
-                <div class="section-title">🏗️ 1. Architecture Diagram — Problem Format</div>
+                <div class="section-title">1. Architecture Diagram - Problem Format</div>
                 <div class="arch-problem">
                     <p style="margin-bottom: 15px;">Given the following subsystem requirements, produce a detailed component architecture:</p>
                     <ul style="padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">
@@ -942,56 +942,59 @@
                 </div>
                 <div class="mermaid">
 graph TB
-    subgraph "Client Layer"
-        C1[Android/iOS Client<br/>Signal Protocol Client]
-        C2[Web Client<br/>React + WebSocket]
+    subgraph Client_Layer["Client Layer"]
+        C1["Android/iOS Client"]
+        C2["Web Client"]
     end
 
-    subgraph "Edge Layer"
-        LB[Nginx Load Balancer<br/>SSL Termination + Sticky Sessions]
+    subgraph Edge_Layer["Edge Layer"]
+        LB["Nginx Load Balancer"]
     end
 
-    subgraph "Application Layer"
-        WG[WebSocket Manager<br/>Go + Gorilla WS<br/>Connection State Map]
-        AG[REST API Gateway<br/>Kong / Nginx Proxy]
-        US[User Service<br/>Phone Auth + JWT<br/>Session Store]
-        CM[Core Messaging<br/>Message Router<br/>Delivery Ack Handler]
+    subgraph Application_Layer["Application Layer"]
+        WG["WebSocket Manager"]
+        AG["REST API Gateway"]
+        US["User Service"]
+        CM["Core Messaging"]
     end
 
-    subgraph "Data Layer"
-        PG[(PostgreSQL 14<br/>Single Node<br/>Messages + Users)]
-        REDIS[(Redis 7<br/>Sessions + Presence<br/>TTL 24h)]
+    subgraph Data_Layer["Data Layer"]
+        PG["PostgreSQL 14"]
+        REDIS["Redis 7"]
     end
 
-    subgraph "External Services"
-        PUSH[Firebase / APNS<br/>Push Notification Bridge]
-        SMS[Twilio / AWS SNS<br/>SMS OTP Provider]
+    subgraph External_Services["External Services"]
+        PUSH["Firebase / APNS"]
+        SMS["Twilio / AWS SNS"]
     end
 
-    C1 -->|WSS :443| LB
-    C2 -->|WSS :443| LB
-    LB -->|Route /ws| WG
-    LB -->|Route /api| AG
+    C1 -->|"WSS :443"| LB
+    C2 -->|"WSS :443"| LB
+    LB -->|"Route /ws"| WG
+    LB -->|"Route /api"| AG
 
-    AG -->|REST /auth| US
-    AG -->|REST /users| US
-    WG -->|gRPC /internal| CM
-    CM -->|SQL| PG
-    US -->|SQL| PG
-    CM -->|Redis Protocol| REDIS
-    US -->|Redis Protocol| REDIS
-    CM -->|HTTP| PUSH
-    US -->|HTTP| SMS
+    AG -->|"REST /auth"| US
+    AG -->|"REST /users"| US
+    WG -->|"gRPC /internal"| CM
+    CM -->|"SQL"| PG
+    US -->|"SQL"| PG
+    CM -->|"Redis Protocol"| REDIS
+    US -->|"Redis Protocol"| REDIS
+    CM -->|"HTTP"| PUSH
+    US -->|"HTTP"| SMS
 
-    style CM fill:#ef4444,stroke:#fff,stroke-width:2px,color:#fff
-    style PG fill:#3b82f6,stroke:#fff,stroke-width:2px,color:#fff
-    style WG fill:#f59e0b,stroke:#fff,stroke-width:2px,color:#fff
+    classDef coreStyle fill:#ef4444,stroke:#fff,stroke-width:2px
+    classDef dbStyle fill:#3b82f6,stroke:#fff,stroke-width:2px
+    classDef wsStyle fill:#f59e0b,stroke:#fff,stroke-width:2px
+    class CM coreStyle
+    class PG dbStyle
+    class WG wsStyle
                 </div>
             </div>
 
             <!-- 2. Interview Questions -->
             <div class="section-box">
-                <div class="section-title">❓ 2. System Architect Interview Questions</div>
+                <div class="section-title">2. System Architect Interview Questions</div>
                 <p style="color: var(--text-secondary); margin-bottom: 15px;">You must be able to answer these fluently for Phase I implementation:</p>
                 <ol class="question-list">
                     <li>Why WebSocket over SSE or Long Polling for the MVP, and at what user threshold does that decision get revisited?</li>
@@ -1001,9 +1004,9 @@ graph TB
                     <li>What is your authentication mechanism for phone verification, and how do you prevent OTP brute-forcing?</li>
                     <li>How do you prevent duplicate message delivery when a client reconnects and retries?</li>
                     <li>What CAP theorem trade-off are you making with a single-node PostgreSQL, and how does it fail?</li>
-                    <li>Where is WebSocket connection state stored — in-memory, Redis, or database — and what happens on server restart?</li>
+                    <li>Where is WebSocket connection state stored - in-memory, Redis, or database - and what happens on server restart?</li>
                     <li>What is your deployment strategy for this MVP, and how do you achieve zero-downtime deploys at this scale?</li>
-                    <li>Draw the exact sequence diagram for: User A sends message → User B is offline → User B opens app → message delivered.</li>
+                    <li>Draw the exact sequence diagram for: User A sends message to User B is offline to User B opens app to message delivered.</li>
                     <li>How do you migrate from this monolith to microservices without a big-bang rewrite?</li>
                     <li>What are your SLIs and SLOs for message delivery latency at Phase I?</li>
                 </ol>
@@ -1011,7 +1014,7 @@ graph TB
 
             <!-- 3. Full Architecture -->
             <div class="section-box">
-                <div class="section-title">🌐 3. Full Architecture — Interactive View</div>
+                <div class="section-title">3. Full Architecture - Interactive View</div>
                 <p style="color: var(--text-secondary); margin-bottom: 15px;">Complete Phase I topology with data flows:</p>
                 <div class="mermaid">
 sequenceDiagram
@@ -1024,93 +1027,93 @@ sequenceDiagram
     participant REDIS as Redis
     participant PUSH as FCM/APNS
 
-    Note over A,B: Phase I: 0-10 Users<br/>Message Flow — User B Offline
+    Note over A,B: Phase I: 0-10 Users - Message Flow User B Offline
 
-    A->>LB: HTTPS POST /auth/verify<br/>{phone, otp}
+    A->>LB: HTTPS POST /auth/verify {phone, otp}
     LB->>WG: Upgrade to WSS /ws
     WG->>CM: gRPC RegisterConnection(user_id, socket_id)
-    CM->>REDIS: SET presence:user:A "online" EX 300
+    CM->>REDIS: SET presence:user:A online EX 300
     CM->>PG: SELECT * FROM users WHERE phone = ?
 
-    A->>WG: WSS SendMessage<br/>{to: B, content: "Hello", client_msg_id: "uuid-v4"}
+    A->>WG: WSS SendMessage {to: B, content: Hello, client_msg_id: uuid-v4}
     WG->>CM: RouteMessage(msg)
-    CM->>PG: INSERT messages ...<br/>ON CONFLICT (client_msg_id) DO NOTHING
+    CM->>PG: INSERT messages ... ON CONFLICT (client_msg_id) DO NOTHING
     CM->>REDIS: GET presence:user:B
-    REDIS-->>CM: "offline"
+    REDIS-->>CM: offline
     CM->>PG: INSERT pending_deliveries ...
-    CM->>PUSH: HTTP POST /fcm/send<br/>{token: B_device_token, payload: {msg_id, from:A}}
+    CM->>PUSH: HTTP POST /fcm/send {token: B_device_token, payload: {msg_id, from:A}}
     PUSH-->>B: Push Notification
 
     Note over B: User B Opens App
     B->>LB: HTTPS POST /auth/verify
     LB->>WG: Upgrade to WSS /ws
     WG->>CM: RegisterConnection(user_B, socket_id)
-    CM->>REDIS: SET presence:user:B "online" EX 300
-    B->>WG: WSS FetchMissedMessages<br/>{last_sequence: 0}
+    CM->>REDIS: SET presence:user:B online EX 300
+    B->>WG: WSS FetchMissedMessages {last_sequence: 0}
     WG->>CM: GetPendingMessages(user_B, last_seq)
-    CM->>PG: SELECT * FROM messages<br/>WHERE to_user = B<br/>AND sequence > 0<br/>ORDER BY sequence ASC
-    PG-->>CM: [Message Rows]
-    CM->>B: WSS DeliverMessages<br/>[{msg_id, from:A, content, seq:1}]
-    B-->>CM: WSS AckDelivery<br/>{msg_ids: [uuid]}
-    CM->>PG: UPDATE messages SET status='delivered'<br/>WHERE id IN (...)
+    CM->>PG: SELECT * FROM messages WHERE to_user = B AND sequence > 0 ORDER BY sequence ASC
+    PG-->>CM: Message Rows
+    CM->>B: WSS DeliverMessages [{msg_id, from:A, content, seq:1}]
+    B-->>CM: WSS AckDelivery {msg_ids: [uuid]}
+    CM->>PG: UPDATE messages SET status=delivered WHERE id IN (...)
     CM->>REDIS: DEL pending:user:B
                 </div>
             </div>
 
             <!-- 5. Non-coding Checklist -->
             <div class="section-box">
-                <div class="section-title">✅ 5. Phase I Technical Completion Checklist</div>
+                <div class="section-title">5. Phase I Technical Completion Checklist</div>
                 <p style="color: var(--text-secondary); margin-bottom: 15px;">Without writing production code, complete these deliverables to mark Phase I as architecturally complete:</p>
                 <div class="checklist-grid">
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>C4 Diagrams</strong><br/><small>Context, Container, Component, Code</small></div></div>
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>ER Diagram</strong><br/><small>Complete data model with indexes</small></div></div>
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>OpenAPI Spec</strong><br/><small>All REST + WebSocket contracts</small></div></div>
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Sequence Diagrams</strong><br/><small>Send, delivery, auth, reconnect</small></div></div>
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>ADR Documents</strong><br/><small>Tech choices with trade-offs</small></div></div>
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Capacity Planning</strong><br/><small>CPU, RAM, DB storage estimates</small></div></div>
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Threat Model</strong><br/><small>STRIDE analysis for messaging</small></div></div>
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>SLO Definitions</strong><br/><small>Latency, availability, error rate</small></div></div>
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Runbooks</strong><br/><small>On-call procedures, playbooks</small></div></div>
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Infra Topology</strong><br/><small>Docker Compose / k8s manifests</small></div></div>
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Migration Path</strong><br/><small>Monolith → Microservices plan</small></div></div>
-                    <div class="checklist-item"><div class="check-icon">✓</div><div><strong>Cost Estimate</strong><br/><small>Infrastructure spend projection</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>C4 Diagrams</strong><br/><small>Context, Container, Component, Code</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>ER Diagram</strong><br/><small>Complete data model with indexes</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>OpenAPI Spec</strong><br/><small>All REST + WebSocket contracts</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>Sequence Diagrams</strong><br/><small>Send, delivery, auth, reconnect</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>ADR Documents</strong><br/><small>Tech choices with trade-offs</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>Capacity Planning</strong><br/><small>CPU, RAM, DB storage estimates</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>Threat Model</strong><br/><small>STRIDE analysis for messaging</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>SLO Definitions</strong><br/><small>Latency, availability, error rate</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>Runbooks</strong><br/><small>On-call procedures, playbooks</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>Infra Topology</strong><br/><small>Docker Compose / k8s manifests</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>Migration Path</strong><br/><small>Monolith to Microservices plan</small></div></div>
+                    <div class="checklist-item"><div class="check-icon">OK</div><div><strong>Cost Estimate</strong><br/><small>Infrastructure spend projection</small></div></div>
                 </div>
             </div>
 
             <!-- 6. Answers -->
             <div class="section-box">
-                <div class="section-title">🧠 6. Architect Answers — 20-Year Google SA Perspective</div>
+                <div class="section-title">6. Architect Answers - 20-Year Google SA Perspective</div>
 
                 <div class="answer-box">
                     <div class="answer-label">Q1: WebSocket vs SSE vs Long Polling</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
-                        <strong>WebSocket is non-negotiable here.</strong> At Google, we learned that SSE is server-push-only; your client needs to send typing indicators, read receipts, and presence heartbeats without opening parallel connections. Long polling at 10 users works but introduces N+1 query problems and 2-5 second latency windows that destroy perceived real-timeness. WebSocket gives full-duplex over a single TCP connection with sub-100ms latency. The threshold to revisit isn't user count—it's connection count. When you hit ~65K concurrent sockets per server (file descriptor limits), you horizontal shard with sticky sessions. At 10 users, a single Gorilla WS handler on a 2-core VM handles this trivially, but you're building the correct foundation.
+                        <strong>WebSocket is non-negotiable here.</strong> At Google, we learned that SSE is server-push-only; your client needs to send typing indicators, read receipts, and presence heartbeats without opening parallel connections. Long polling at 10 users works but introduces N+1 query problems and 2-5 second latency windows that destroy perceived real-timeness. WebSocket gives full-duplex over a single TCP connection with sub-100ms latency. The threshold to revisit is not user count - it is connection count. When you hit ~65K concurrent sockets per server (file descriptor limits), you horizontal shard with sticky sessions. At 10 users, a single Gorilla WS handler on a 2-core VM handles this trivially, but you are building the correct foundation.
                     </p>
                 </div>
 
                 <div class="answer-box">
                     <div class="answer-label">Q2: Message Ordering Without Global Clock</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
-                        <strong>Never rely on system timestamps.</strong> We use conversation-scoped sequence numbers. Each conversation row in PostgreSQL maintains a <code>last_sequence</code> counter. When User A sends to User B, we do: <code>UPDATE conversations SET last_sequence = last_sequence + 1 WHERE id = ? RETURNING last_sequence</code>. This gives us a strict monotonic sequence per conversation. The message is inserted with this sequence. On the client, we maintain a <code>max_received_sequence</code> per conversation; gaps trigger a repair fetch. This is how Google Chat handles ordering—logical clocks scoped to the conversation, not global Snowflake IDs which only guarantee uniqueness, not causality.
+                        <strong>Never rely on system timestamps.</strong> We use conversation-scoped sequence numbers. Each conversation row in PostgreSQL maintains a last_sequence counter. When User A sends to User B, we do: UPDATE conversations SET last_sequence = last_sequence + 1 WHERE id = ? RETURNING last_sequence. This gives us a strict monotonic sequence per conversation. The message is inserted with this sequence. On the client, we maintain a max_received_sequence per conversation; gaps trigger a repair fetch. This is how Google Chat handles ordering - logical clocks scoped to the conversation, not global Snowflake IDs which only guarantee uniqueness, not causality.
                     </p>
                 </div>
 
                 <div class="answer-box">
                     <div class="answer-label">Q3: Database Schema Design</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
-                        <strong>Four core tables.</strong> <code>users</code>: id (UUID), phone (unique, indexed), name, public_key, created_at. <code>conversations</code>: id, type ('1:1' or 'group'), last_sequence, created_at. <code>participants</code>: conversation_id, user_id, last_read_sequence, joined_at. <code>messages</code>: id (UUID), conversation_id, sender_id, content (encrypted blob), sequence (unique per conversation), client_message_id (UUID, unique per conversation), status ('sent','delivered','read'), created_at. Index on <code>(conversation_id, sequence DESC)</code> for fetch efficiency. The <code>client_message_id</code> with a UNIQUE constraint on <code>(conversation_id, client_message_id)</code> gives you idempotency for free.
+                        <strong>Four core tables.</strong> users: id (UUID), phone (unique, indexed), name, public_key, created_at. conversations: id, type (1:1 or group), last_sequence, created_at. participants: conversation_id, user_id, last_read_sequence, joined_at. messages: id (UUID), conversation_id, sender_id, content (encrypted blob), sequence (unique per conversation), client_message_id (UUID, unique per conversation), status (sent,delivered,read), created_at. Index on (conversation_id, sequence DESC) for fetch efficiency. The client_message_id with a UNIQUE constraint on (conversation_id, client_message_id) gives you idempotency for free.
                     </p>
                 </div>
 
                 <div class="answer-box">
-                    <div class="answer-label">Q4: Reconnect After 8 Hours — No Full Scan</div>
+                    <div class="answer-label">Q4: Reconnect After 8 Hours - No Full Scan</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
-                        <strong>Cursor-based pagination using sequence numbers.</strong> The client persists its highest known sequence number per conversation locally (SQLite on device). On reconnect, it sends <code>FetchMissedMessages {last_sequence: 42}</code>. The server queries: <code>SELECT * FROM messages WHERE conversation_id = ? AND sequence > 42 ORDER BY sequence ASC LIMIT 100</code>. This is an index-only scan on the composite index. No timestamps, no offsets. If the client has no local state (new device), we use a separate <code>device_sync_checkpoint</code> table that tracks the last global sequence the device acknowledged. This is identical to how Gmail syncs via history IDs.
+                        <strong>Cursor-based pagination using sequence numbers.</strong> The client persists its highest known sequence number per conversation locally (SQLite on device). On reconnect, it sends FetchMissedMessages {last_sequence: 42}. The server queries: SELECT * FROM messages WHERE conversation_id = ? AND sequence > 42 ORDER BY sequence ASC LIMIT 100. This is an index-only scan on the composite index. No timestamps, no offsets. If the client has no local state (new device), we use a separate device_sync_checkpoint table that tracks the last global sequence the device acknowledged. This is identical to how Gmail syncs via history IDs.
                     </p>
                 </div>
 
                 <div class="answer-box">
-                    <div class="answer-label">Q5: Phone Auth & OTP Brute-Force Prevention</div>
+                    <div class="answer-label">Q5: Phone Auth and OTP Brute-Force Prevention</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
                         <strong>Rate limit at multiple layers.</strong> Per-phone: max 3 OTP requests per hour, enforced in Redis with TTL 3600. Per-IP: max 10 requests per minute across all phones. OTP is 6-digit, expires in 5 minutes, stored as bcrypt hash (never plaintext). After 3 failed attempts, invalidate the OTP and require re-request. Use Twilio Verify or AWS SNS with fraud detection. JWT access token expires in 15 minutes, refresh token in 7 days (stored hashed in DB). On logout, revoke refresh token and broadcast to all connected devices to drop WS connections. At Google scale, we use FIDO2/WebAuthn, but for MVP, SMS + JWT with Redis-backed revocation lists is correct.
                     </p>
@@ -1119,49 +1122,49 @@ sequenceDiagram
                 <div class="answer-box">
                     <div class="answer-label">Q6: Duplicate Prevention on Reconnect</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
-                        <strong>Idempotency keys at the client layer.</strong> Every message sent from client carries a client-generated UUIDv4 in <code>client_message_id</code>. The database enforces <code>UNIQUE(conversation_id, client_message_id)</code>. On insert conflict, the server returns the existing message row (SELECT + RETURNING). The client treats this as success. For non-message actions (delete, edit), use the same pattern. Additionally, the server maintains an <code>idempotency_key</code> table with 24h TTL for non-database actions like push notification triggers. This dual-layer approach ensures exactly-once semantics without distributed transactions at this scale.
+                        <strong>Idempotency keys at the client layer.</strong> Every message sent from client carries a client-generated UUIDv4 in client_message_id. The database enforces UNIQUE(conversation_id, client_message_id). On insert conflict, the server returns the existing message row (SELECT + RETURNING). The client treats this as success. For non-message actions (delete, edit), use the same pattern. Additionally, the server maintains an idempotency_key table with 24h TTL for non-database actions like push notification triggers. This dual-layer approach ensures exactly-once semantics without distributed transactions at this scale.
                     </p>
                 </div>
 
                 <div class="answer-box">
                     <div class="answer-label">Q7: CAP Theorem Trade-Offs</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
-                        <strong>Single-node PostgreSQL chooses CP (Consistency over Availability).</strong> In a network partition between app and DB, the app becomes unavailable rather than serving stale data or accepting writes that might be lost. At 10 users, this is the correct choice—message integrity is more important than 99.999% uptime. The failure mode is a 500 error during DB restart; clients retry with exponential backoff. When you scale to Phase IV and shard, you move to Partition Tolerance + eventual consistency for cross-shard operations, but per-shard you remain CP. Google Spanner gives you CAP illusion with TrueTime, but that's Phase VI complexity.
+                        <strong>Single-node PostgreSQL chooses CP (Consistency over Availability).</strong> In a network partition between app and DB, the app becomes unavailable rather than serving stale data or accepting writes that might be lost. At 10 users, this is the correct choice - message integrity is more important than 99.999% uptime. The failure mode is a 500 error during DB restart; clients retry with exponential backoff. When you scale to Phase IV and shard, you move to Partition Tolerance + eventual consistency for cross-shard operations, but per-shard you remain CP. Google Spanner gives you CAP illusion with TrueTime, but that is Phase VI complexity.
                     </p>
                 </div>
 
                 <div class="answer-box">
                     <div class="answer-label">Q8: WebSocket Connection State Storage</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
-                        <strong>In-memory hash map with Redis as backup.</strong> The WebSocket Manager maintains <code>map[user_id] = *Conn</code> in process memory for O(1) routing. On server restart, this is lost—acceptable at Phase I because restart takes 5 seconds and clients auto-reconnect with exponential backoff. We also write <code>SET ws:presence:user_id "server_3" EX 60</code> to Redis so other servers can check if a user is likely online elsewhere. At Phase III, we move to a distributed pub/sub (Redis Streams or NATS) for cross-server broadcast when group chats arrive. Never store socket state in PostgreSQL; the write latency destroys real-time performance.
+                        <strong>In-memory hash map with Redis as backup.</strong> The WebSocket Manager maintains map[user_id] = Conn in process memory for O(1) routing. On server restart, this is lost - acceptable at Phase I because restart takes 5 seconds and clients auto-reconnect with exponential backoff. We also write SET ws:presence:user_id server_3 EX 60 to Redis so other servers can check if a user is likely online elsewhere. At Phase III, we move to a distributed pub/sub (Redis Streams or NATS) for cross-server broadcast when group chats arrive. Never store socket state in PostgreSQL; the write latency destroys real-time performance.
                     </p>
                 </div>
 
                 <div class="answer-box">
                     <div class="answer-label">Q9: Deployment Strategy</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
-                        <strong>Docker Compose on a single EC2 t3.medium with blue-green deployment.</strong> Nginx as reverse proxy routes traffic. PostgreSQL runs in a container with a mounted EBS volume for persistence, Redis in another. The app is a Go binary in a Distroless container. CI/CD via GitHub Actions: build image, push to ECR, SSH to server, pull new image, start on port 8081, switch Nginx upstream from 8080 to 8081, drain 8080, stop old container. This gives zero-downtime deploys without Kubernetes complexity. Health checks at <code>/health</code> verify DB and Redis connectivity. At this scale, avoid k8s—the operational overhead is a tax you don't need yet.
+                        <strong>Docker Compose on a single EC2 t3.medium with blue-green deployment.</strong> Nginx as reverse proxy routes traffic. PostgreSQL runs in a container with a mounted EBS volume for persistence, Redis in another. The app is a Go binary in a Distroless container. CI/CD via GitHub Actions: build image, push to ECR, SSH to server, pull new image, start on port 8081, switch Nginx upstream from 8080 to 8081, drain 8080, stop old container. This gives zero-downtime deploys without Kubernetes complexity. Health checks at /health verify DB and Redis connectivity. At this scale, avoid k8s - the operational overhead is a tax you do not need yet.
                     </p>
                 </div>
 
                 <div class="answer-box">
-                    <div class="answer-label">Q10: Sequence Diagram — Offline Delivery</div>
+                    <div class="answer-label">Q10: Sequence Diagram - Offline Delivery</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
-                        <strong>Detailed flow:</strong> (1) User A sends message with client_msg_id via WSS. (2) Core Messaging inserts to DB with sequence 5. (3) Check Redis presence for User B: returns nil. (4) Insert into <code>pending_messages</code> queue table or Redis list <code>pending:user_B</code>. (5) Trigger Push Relay with message metadata (not content, for privacy). (6) User B's device receives FCM notification, opens app. (7) App establishes WSS, sends <code>FetchMissedMessages {last_sequence: 4}</code>. (8) Server queries messages WHERE sequence > 4, returns message 5. (9) User B app displays message, sends ACK. (10) Server updates status to 'delivered', removes from pending queue. If ACK is lost, client deduplicates via client_msg_id on next reconnect.
+                        <strong>Detailed flow:</strong> (1) User A sends message with client_msg_id via WSS. (2) Core Messaging inserts to DB with sequence 5. (3) Check Redis presence for User B: returns nil. (4) Insert into pending_messages queue table or Redis list pending:user_B. (5) Trigger Push Relay with message metadata (not content, for privacy). (6) User B device receives FCM notification, opens app. (7) App establishes WSS, sends FetchMissedMessages {last_sequence: 4}. (8) Server queries messages WHERE sequence > 4, returns message 5. (9) User B app displays message, sends ACK. (10) Server updates status to delivered, removes from pending queue. If ACK is lost, client deduplicates via client_msg_id on next reconnect.
                     </p>
                 </div>
 
                 <div class="answer-box">
                     <div class="answer-label">Q11: Monolith to Microservices Migration</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
-                        <strong>Strangler Fig Pattern with API Gateway introduction.</strong> Step 1: Place Kong/Nginx in front of monolith without changing routes. Step 2: Extract User Service first—it's the most isolated bounded context. Route <code>/auth/*</code> and <code>/users/*</code> to new service, everything else to monolith. Share the PostgreSQL instance initially (no data split yet). Step 3: Extract Media Service when storage costs spike. Step 4: Extract Group Service when fan-out logic becomes complex. Step 5: Finally split Chat Service. At each step, the old monolith code is deleted (strangled). Never do a big-bang rewrite—Google learned this painfully with AdWords. Database-per-service comes last, not first.
+                        <strong>Strangler Fig Pattern with API Gateway introduction.</strong> Step 1: Place Kong/Nginx in front of monolith without changing routes. Step 2: Extract User Service first - it is the most isolated bounded context. Route /auth/* and /users/* to new service, everything else to monolith. Share the PostgreSQL instance initially (no data split yet). Step 3: Extract Media Service when storage costs spike. Step 4: Extract Group Service when fan-out logic becomes complex. Step 5: Finally split Chat Service. At each step, the old monolith code is deleted (strangled). Never do a big-bang rewrite - Google learned this painfully with AdWords. Database-per-service comes last, not first.
                     </p>
                 </div>
 
                 <div class="answer-box">
                     <div class="answer-label">Q12: SLIs and SLOs for Phase I</div>
                     <p style="color: var(--text-secondary); line-height: 1.6;">
-                        <strong>Three SLIs, conservative SLOs.</strong> (1) <strong>Message Send Latency (p99):</strong> SLI = time from WSS send to DB persist. SLO = < 500ms at p99. (2) <strong>Delivery Success Rate:</strong> SLI = ratio of messages marked 'delivered' to total sent. SLO = > 99.5% within 24 hours (accounts for offline users). (3) <strong>API Availability:</strong> SLI = ratio of successful HTTP 2xx to total requests. SLO = > 99.9% excluding planned maintenance. No error budget yet at Phase I—just measurement. Use Prometheus + Grafana to track. Alert on SLO burn rate > 10% in 1 hour. These numbers are aspirational but achievable on a single node with proper connection pooling.
+                        <strong>Three SLIs, conservative SLOs.</strong> (1) Message Send Latency (p99): SLI = time from WSS send to DB persist. SLO = less than 500ms at p99. (2) Delivery Success Rate: SLI = ratio of messages marked delivered to total sent. SLO = greater than 99.5% within 24 hours (accounts for offline users). (3) API Availability: SLI = ratio of successful HTTP 2xx to total requests. SLO = greater than 99.9% excluding planned maintenance. No error budget yet at Phase I - just measurement. Use Prometheus + Grafana to track. Alert on SLO burn rate > 10% in 1 hour. These numbers are aspirational but achievable on a single node with proper connection pooling.
                     </p>
                 </div>
             </div>
@@ -1171,9 +1174,9 @@ sequenceDiagram
     <!-- Modal -->
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="modal-close" onclick="closeModal()">×</button>
+            <button class="modal-close" onclick="closeModal()">x</button>
             <h3 class="modal-title" id="modalTitle">Component</h3>
-            <p class="modal-subtitle" id="modalSubtitle">Type • Phase</p>
+            <p class="modal-subtitle" id="modalSubtitle">Type - Phase</p>
 
             <div class="detail-box">
                 <div class="detail-label">What is this component about?</div>
@@ -1197,217 +1200,217 @@ sequenceDiagram
         const components = {
             'core-messaging': {
                 title: 'Core Messaging Gateway',
-                subtitle: 'Core Service • Phase I',
+                subtitle: 'Core Service - Phase I',
                 what: 'Handles real-time message ingestion, routing, and delivery between users via persistent WebSocket connections and protocol translation.',
                 why: 'Isolated to manage connection state logic, enable independent scaling of concurrent sockets, and prevent chat logic coupling to transport.',
                 problems: 'Solves connection churn, strict message ordering, and delivery acknowledgment at scale while abstracting protocol complexity from business services and ensuring reliable multi-device fan-out.'
             },
             'user-service': {
-                title: 'User Identity & Auth',
-                subtitle: 'Core Service • Phase I',
+                title: 'User Identity and Auth',
+                subtitle: 'Core Service - Phase I',
                 what: 'Manages user registration, phone number verification, authentication tokens, session lifecycle, and identity resolution across all registered user devices.',
                 why: 'Isolated because authentication security patterns differ from messaging, requiring hardened access controls without impacting real-time chat latency.',
                 problems: 'Prevents unauthorized account access, isolates credential storage from message content, enables secure multi-device identity linking, and supports compliance auditing requirements.'
             },
             'websocket': {
                 title: 'WebSocket Connection Manager',
-                subtitle: 'Core Service • Phase I',
+                subtitle: 'Core Service - Phase I',
                 what: 'Maintains millions of persistent client connections, handles heartbeat detection, connection migration, and real-time device presence state tracking.',
                 why: 'Isolated to manage millions of long-lived TCP connections separately from stateless business logic and enable independent horizontal scaling.',
                 problems: 'Solves connection memory overhead, detects client online status instantly, gracefully handles cellular network handoffs, and enables efficient broadcast routing.'
             },
             'persistence': {
                 title: 'Message Persistence Store',
-                subtitle: 'Core Service • Phase I',
+                subtitle: 'Core Service - Phase I',
                 what: 'Durable storage for message history, edit logs, deletion records, and conversation metadata with strict chronological ordering and consistency guarantees.',
                 why: 'Isolated because storage semantics, retention policies, and backup requirements differ from real-time routing, allowing specialized database technology selection.',
                 problems: 'Ensures message durability during client offline periods, enables seamless history retrieval, supports compliance archiving, and maintains strict conversation state consistency.'
             },
             'api-gateway': {
                 title: 'API Gateway',
-                subtitle: 'Infrastructure • Phase I',
+                subtitle: 'Infrastructure - Phase I',
                 what: 'Entry point for all client requests providing SSL termination, rate limiting, intelligent request routing, and basic DDoS protection.',
                 why: 'Separated to centralize cross-cutting concerns so business services focus on domain logic without duplicating security handling everywhere.',
                 problems: 'Prevents backend service overload, enforces throttling policies, provides unified SSL certificate management, and enables centralized request analytics capture.'
             },
             'push': {
                 title: 'Push Notification Relay',
-                subtitle: 'Core Service • Phase I',
+                subtitle: 'Core Service - Phase I',
                 what: 'Bridges internal message events to Apple Push Notification Service and Firebase Cloud Messaging for alerting offline user devices.',
                 why: 'Isolated because it integrates with external vendor APIs, handles complex retry logic, and manages device token registries independently.',
                 problems: 'Ensures message awareness when apps are backgrounded, reduces battery drain via centralized push management, and handles device token churn gracefully.'
             },
             'contact': {
                 title: 'Contact Discovery Service',
-                subtitle: 'Core Service • Phase II',
+                subtitle: 'Core Service - Phase II',
                 what: 'Matches phone numbers from user address books to registered users while respecting privacy preferences, consent settings, and data minimization.',
                 why: 'Separated due to high read volume, privacy sensitivity, and need for asynchronous batch processing of hashed contact lists efficiently.',
                 problems: 'Solves privacy-preserving contact matching efficiently, reduces heavy load on core authentication systems, and enables incremental address book synchronization across user devices.'
             },
             'media': {
-                title: 'Media Storage & Processing',
-                subtitle: 'Feature Service • Phase II',
+                title: 'Media Storage and Processing',
+                subtitle: 'Feature Service - Phase II',
                 what: 'Stores encrypted images, video, audio, and documents while handling compression, thumbnail generation, and CDN distribution for clients.',
                 why: 'Separated due to massive storage footprint, CPU-intensive transcoding workloads, and fundamentally different scaling patterns compared to text metadata.',
                 problems: 'Offloads blob traffic from core databases, reduces bandwidth via smart compression, enables geographic content caching, and accelerates media downloads globally.'
             },
             'group': {
                 title: 'Group Management Service',
-                subtitle: 'Core Service • Phase II',
+                subtitle: 'Core Service - Phase II',
                 what: 'Handles group creation, membership changes, admin privileges, group metadata updates, and broadcast message fan-out coordination logic.',
                 why: 'Separated because group state is complex CRUD with different consistency needs than one-to-one messaging and requires specialized fan-out.',
                 problems: 'Solves membership synchronization across all clients, prevents group metadata changes from blocking individual message flows, and enforces role-based permissions.'
             },
             'redis': {
                 title: 'Redis Cache Cluster',
-                subtitle: 'Infrastructure • Phase II',
+                subtitle: 'Infrastructure - Phase II',
                 what: 'In-memory store for hot data including user sessions, recent conversations, presence status, and distributed rate limit counters.',
                 why: 'Separated to provide sub-millisecond access patterns distinct from persistent storage and to reduce database load for repetitive queries.',
                 problems: 'Accelerates frequent data lookups, reduces database connection pool pressure, enables real-time presence aggregation, and supports high-throughput counter operations.'
             },
             'queue': {
                 title: 'Distributed Message Queue',
-                subtitle: 'Infrastructure • Phase II',
+                subtitle: 'Infrastructure - Phase II',
                 what: 'Async middleware decoupling services using topics and queues for message delivery events, media processing, and notification dispatching.',
                 why: 'Isolated because buffering and backpressure management require specialized infrastructure with different durability and throughput characteristics than synchronous APIs.',
                 problems: 'Absorbs traffic spikes gracefully, enables service independence during rolling deployments, and guarantees at-least-once processing for critical business events.'
             },
             'e2ee': {
                 title: 'End-to-End Encryption Service',
-                subtitle: 'Core Service • Phase III',
+                subtitle: 'Core Service - Phase III',
                 what: 'Implements Signal Protocol for key generation, pre-key management, session establishment, and cryptographic envelope handling for all messages.',
                 why: 'Cryptographic operations are CPU-intensive and security-critical; separation enables hardware security module integration and strict security audit isolation.',
                 problems: 'Guarantees servers cannot read message content, protects against network interception, and provides both forward secrecy and future secrecy guarantees.'
             },
             'status': {
                 title: 'Status / Stories Service',
-                subtitle: 'Feature Service • Phase III',
+                subtitle: 'Feature Service - Phase III',
                 what: 'Ephemeral content sharing with twenty-four hour expiration, privacy allow/block lists, and media pipeline integration for user stories.',
                 why: 'Isolated due to high write throughput, ephemeral TTL requirements, and distinct fan-out patterns compared to persistent messaging.',
                 problems: 'Enables privacy-controlled content sharing, automates expiration cleanup, and isolates story traffic from critical message delivery paths.'
             },
             'calls': {
                 title: 'Voice/Video Signaling',
-                subtitle: 'Feature Service • Phase III',
+                subtitle: 'Feature Service - Phase III',
                 what: 'Orchestrates call setup, ICE candidate exchange, SDP negotiation, and call state management for VoIP and video sessions.',
                 why: 'Separated because real-time media signaling has different latency requirements and failure modes than asynchronous text chat messaging.',
                 problems: 'Enables low-latency call establishment, manages ring states across multiple user devices, and decouples media relay infrastructure from chat.'
             },
             'search': {
-                title: 'Search & Indexing Service',
-                subtitle: 'Feature Service • Phase III',
+                title: 'Search and Indexing Service',
+                subtitle: 'Feature Service - Phase III',
                 what: 'Indexes message content, media captions, and contact names for fast full-text search within conversations and message archives.',
                 why: 'Isolated because search indexing is write-heavy with eventual consistency needs vastly different from transactional message storage requirements.',
                 problems: 'Enables fast message retrieval without expensive table scans, supports fuzzy matching algorithms, and scales search independently from message ingestion.'
             },
             'monitoring': {
-                title: 'Monitoring & Observability',
-                subtitle: 'Monitoring • Phase III',
+                title: 'Monitoring and Observability',
+                subtitle: 'Monitoring - Phase III',
                 what: 'Collects metrics, distributed traces, and structured logs across all services for real-time health monitoring and incident response.',
                 why: 'Isolated because telemetry ingestion is high-volume and analysis workloads must not impact production service performance or availability.',
                 problems: 'Enables rapid incident diagnosis, provides performance baselines for scaling decisions, and alerts on anomaly detection automatically across infrastructure.'
             },
             'web-sync': {
                 title: 'Web/Desktop Sync',
-                subtitle: 'Feature Service • Phase III',
+                subtitle: 'Feature Service - Phase III',
                 what: 'Multi-device message synchronization, QR code pairing, and state reconciliation between mobile primary and linked companion devices.',
                 why: 'Isolated due to complex state reconciliation logic, different security models for paired devices, and independent release cycles.',
                 problems: 'Enables seamless multi-device experience, maintains end-to-end encryption across linked devices, and supports independent web client updates.'
             },
             'analytics': {
                 title: 'Analytics Event Pipeline',
-                subtitle: 'Analytics • Phase IV',
+                subtitle: 'Analytics - Phase IV',
                 what: 'Ingests user behavior events, message throughput stats, and feature usage into data warehouse for deep product insights.',
                 why: 'Separated due to batch-oriented high-throughput processing needs and to prevent heavy analytical queries from impacting transactional systems.',
                 problems: 'Drives product decisions via usage patterns, identifies scaling bottlenecks proactively, and supports business intelligence reporting without impacting operations.'
             },
             'cdn': {
-                title: 'CDN & Edge Distribution',
-                subtitle: 'Infrastructure • Phase IV',
+                title: 'CDN and Edge Distribution',
+                subtitle: 'Infrastructure - Phase IV',
                 what: 'Geographic distribution of media and static content with edge caching, origin shield, and cache invalidation strategies.',
                 why: 'Isolated because edge caching requires global PoP infrastructure and different operational expertise than application server management.',
                 problems: 'Reduces origin server load dramatically, decreases media download latency globally, and improves user experience across distant geographies.'
             },
             'backup': {
-                title: 'Backup & Restore Service',
-                subtitle: 'Feature Service • Phase IV',
+                title: 'Backup and Restore Service',
+                subtitle: 'Feature Service - Phase IV',
                 what: 'Manages encrypted chat history backups to cloud storage and coordinates key-based restoration when users switch or lose devices.',
                 why: 'Isolated due to large data volumes, background processing needs, and specific integrations with third-party cloud storage providers.',
                 problems: 'Prevents permanent data loss on device changes, enables user-controlled encryption for backups, and offloads long-running transfers from core chat.'
             },
             'sharding': {
                 title: 'Database Sharding Layer',
-                subtitle: 'Infrastructure • Phase IV',
+                subtitle: 'Infrastructure - Phase IV',
                 what: 'Horizontal partitioning strategy, shard routing logic, and rebalancing orchestration for conversation and message data.',
                 why: 'Isolated to encapsulate complex partitioning algorithms, cross-shard query coordination, and data migration workflows independently.',
                 problems: 'Enables horizontal database scaling beyond single-node limits, distributes write load evenly, and supports tenant isolation requirements.'
             },
             'alerting': {
-                title: 'Alerting & Incident Response',
-                subtitle: 'Monitoring • Phase IV',
+                title: 'Alerting and Incident Response',
+                subtitle: 'Monitoring - Phase IV',
                 what: 'Automated anomaly detection, paging integration, runbook automation, and post-mortem tracking for operational excellence.',
                 why: 'Isolated to provide independent operational tooling lifecycle and prevent monitoring failures from cascading into production outages.',
                 problems: 'Reduces mean time to recovery, standardizes incident response procedures, and ensures operational accountability across engineering teams.'
             },
             'business-api': {
                 title: 'WhatsApp Business API',
-                subtitle: 'Business • Phase V',
+                subtitle: 'Business - Phase V',
                 what: 'Dedicated endpoint for business accounts to send templated messages, manage product catalogs, and integrate CRM or chatbot platforms.',
                 why: 'Separated to enforce distinct rate limits, compliance rules, and authentication models for enterprise versus consumer traffic patterns.',
                 problems: 'Enables B2B monetization streams, isolates heavy enterprise load from consumer chat, and provides guaranteed SLAs for business integrations.'
             },
             'multi-region': {
                 title: 'Multi-Region Orchestrator',
-                subtitle: 'Infrastructure • Phase V',
+                subtitle: 'Infrastructure - Phase V',
                 what: 'Cross-region deployment, traffic steering, data residency compliance, and automated disaster recovery orchestration.',
                 why: 'Isolated because global topology management requires specialized tooling distinct from application business logic and local deployment workflows.',
                 problems: 'Ensures regulatory data residency compliance, reduces latency for distant users, and provides automatic failover during regional outages.'
             },
             'rate-limit': {
-                title: 'Rate Limiting & Anti-Spam',
-                subtitle: 'Business • Phase V',
+                title: 'Rate Limiting and Anti-Spam',
+                subtitle: 'Business - Phase V',
                 what: 'Enforces request quotas, detects abusive traffic patterns, and filters spam using behavioral heuristics and reputation scoring systems.',
                 why: 'Isolated to protect backend services uniformly and enable rapid security rule updates without deploying changes to business microservices.',
                 problems: 'Prevents service abuse and infrastructure cost inflation from malicious traffic while maintaining platform quality, security, and user trust.'
             },
             'dashboards': {
                 title: 'Real-Time Dashboards',
-                subtitle: 'Analytics • Phase V',
+                subtitle: 'Analytics - Phase V',
                 what: 'Live operational dashboards for business metrics, usage patterns, and infrastructure health with sub-second refresh rates.',
                 why: 'Isolated due to specialized stream processing requirements and to prevent dashboard queries from impacting transactional data pipelines.',
                 problems: 'Provides instant visibility into system health, enables data-driven capacity planning, and supports executive business reporting needs.'
             },
             'reply': {
-                title: 'Reply & Threading Engine',
-                subtitle: 'Core • Phase V',
+                title: 'Reply and Threading Engine',
+                subtitle: 'Core - Phase V',
                 what: 'Message threading, reply chains, context preservation, and conversation branching logic for complex discussion flows.',
                 why: 'Isolated because threading introduces graph-like data structures and recursive query patterns distinct from flat message streams.',
                 problems: 'Enables structured conversations, preserves reply context across devices, and supports threaded notification routing preferences.'
             },
             'payments': {
                 title: 'Payment Processing Service',
-                subtitle: 'Business • Phase VI',
+                subtitle: 'Business - Phase VI',
                 what: 'Handles payment method linking, transaction authorization, peer-to-peer fund transfers, and compliance with strict financial regulations.',
                 why: 'Isolated due to strict PCI-DSS requirements, detailed financial audit trails, and integration with banking and payment provider APIs.',
                 problems: 'Enables secure peer-to-peer payments, maintains strict transaction integrity, isolates financial risk from messaging, and ensures regulatory compliance.'
             },
             'ml': {
                 title: 'ML Inference Platform',
-                subtitle: 'Feature • Phase VI',
+                subtitle: 'Feature - Phase VI',
                 what: 'Real-time spam detection, content moderation, smart replies, and predictive caching using trained neural models.',
                 why: 'Isolated because ML inference requires GPU/TPU resources, model versioning, and A/B testing infrastructure unlike standard services.',
                 problems: 'Automates content policy enforcement, reduces manual moderation costs, improves user experience via predictions, and detects emergent abuse patterns.'
             },
             'global-cdn': {
                 title: 'Global Edge Network',
-                subtitle: 'Infrastructure • Phase VI',
+                subtitle: 'Infrastructure - Phase VI',
                 what: 'Planetary-scale edge nodes, Anycast routing, DDoS scrubbing, and TLS termination at edge for sub-50ms latency.',
                 why: 'Isolated because edge network operations require BGP expertise, peering agreements, and physical infrastructure management.',
                 problems: 'Absorbs volumetric DDoS attacks before reaching origin, terminates TLS closer to users, and enables global low-latency presence.'
             },
             'cross-shard': {
                 title: 'Cross-Shard Transaction Coordinator',
-                subtitle: 'Infrastructure • Phase VI',
+                subtitle: 'Infrastructure - Phase VI',
                 what: 'Saga orchestration, two-phase commit, and distributed transaction management across database shards and regions.',
                 why: 'Isolated to encapsulate complex distributed consensus logic and provide reusable transaction primitives for all business services.',
                 problems: 'Maintains data consistency across distributed partitions, enables global payment settlement, and automates transaction failure recovery.'
@@ -1420,7 +1423,7 @@ sequenceDiagram
         function filterPhase(phase) {
             currentPhase = phase;
             document.querySelectorAll('.phase-card').forEach(c => c.classList.remove('active'));
-            document.querySelector(`.phase-card[data-phase="${phase}"]`).classList.add('active');
+            document.querySelector('.phase-card[data-phase="' + phase + '"]').classList.add('active');
             applyFilters();
         }
 
