@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datadog System Architecture - Evolution by Phase</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #0f172a; 
+            color: #e2e8f0; 
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .header {
+            text-align: center; 
+            padding: 2rem 1rem; 
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid #334155;
+        }
+        .header h1 { 
+            font-size: 2.5rem; 
+            background: linear-gradient(90deg, #60a5fa, #a78bfa); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            margin-bottom: 0.5rem;
+        }
+        .header p { color: #94a3b8; font-size: 1.1rem; }
+
+        .phase-nav {
+            display: flex; 
+            justify-content: center; 
+            gap: 0.5rem; 
+            padding: 1.5rem; 
+            flex-wrap: wrap;
+            background: #1e293b;
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
+            border-bottom: 1px solid #334155;
+        }
+        .phase-btn {
+            padding: 0.75rem 1.5rem; 
+            border: 2px solid #334155; 
+            background: #1e293b; 
+            color: #94a3b8;
+            border-radius: 9999px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        .phase-btn:hover { border-color: #60a5fa; color: #60a5fa; transform: translateY(-2px); }
+        .phase-btn.active { 
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6); 
+            color: white; 
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .phase-section {
+            display: none; 
+            padding: 2rem; 
+            max-width: 1400px; 
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease;
+        }
+        .phase-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .phase-header {
+            text-align: center; 
+            margin-bottom: 2rem;
+        }
+        .phase-header h2 { 
+            font-size: 2rem; 
+            color: #f8fafc; 
+            margin-bottom: 0.5rem;
+        }
+        .phase-header .user-range {
+            display: inline-block; 
+            background: #334155; 
+            padding: 0.5rem 1rem; 
+            border-radius: 9999px;
+            color: #60a5fa; 
+            font-weight: 600; 
+            font-size: 0.9rem;
+        }
+        .phase-header .desc {
+            color: #94a3b8; 
+            margin-top: 1rem; 
+            max-width: 800px; 
+            margin-left: auto; 
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        .components-grid {
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); 
+            gap: 1.5rem;
+        }
+
+        .component-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 1px solid #334155; 
+            border-radius: 16px; 
+            padding: 1.5rem;
+            transition: all 0.3s; 
+            position: relative; 
+            overflow: hidden;
+        }
+        .component-card:hover { 
+            transform: translateY(-5px); 
+            border-color: #60a5fa; 
+            box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);
+        }
+        .component-card.new::before {
+            content: "NEW"; 
+            position: absolute; 
+            top: 12px; 
+            right: -28px;
+            background: #10b981; 
+            color: white; 
+            padding: 4px 30px; 
+            font-size: 0.7rem;
+            font-weight: 800; 
+            transform: rotate(45deg); 
+            letter-spacing: 1px;
+        }
+        .component-card.carried {
+            opacity: 0.85; 
+            border-color: #475569;
+        }
+        .component-card.carried::after {
+            content: "↳ Carried from previous"; 
+            position: absolute; 
+            top: 10px; 
+            right: 10px;
+            font-size: 0.7rem; 
+            color: #64748b; 
+            background: #334155;
+            padding: 2px 8px; 
+            border-radius: 4px;
+        }
+
+        .card-header {
+            display: flex; 
+            align-items: center; 
+            gap: 0.75rem; 
+            margin-bottom: 1rem;
+        }
+        .icon {
+            width: 40px; 
+            height: 40px; 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 1.2rem; 
+            font-weight: bold;
+        }
+        .type-core { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .type-infra { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.3); }
+        .type-mon { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .type-ana { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .type-biz { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .type-feat { background: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
+
+        .card-title { 
+            font-size: 1.1rem; 
+            font-weight: 700; 
+            color: #f1f5f9;
+        }
+        .type-badge {
+            font-size: 0.65rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            font-weight: 700;
+            padding: 3px 10px; 
+            border-radius: 9999px; 
+            margin-left: auto;
+        }
+
+        .detail-box {
+            background: #0f172a; 
+            border-radius: 8px; 
+            padding: 0.75rem; 
+            margin-top: 0.75rem;
+            border-left: 3px solid #334155;
+        }
+        .detail-box h4 { 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            color: #64748b; 
+            margin-bottom: 0.25rem;
+        }
+        .detail-box p { 
+            font-size: 0.85rem; 
+            color: #cbd5e1; 
+            line-height: 1.4;
+        }
+
+        .evolution-arrow {
+            text-align: center; 
+            padding: 1rem; 
+            color: #64748b; 
+            font-size: 1.5rem;
+        }
+
+        .legend {
+            display: flex; 
+            justify-content: center; 
+            gap: 1.5rem; 
+            padding: 1rem; 
+            flex-wrap: wrap;
+            background: #1e293b; 
+            border-top: 1px solid #334155;
+        }
+        .legend-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+            font-size: 0.85rem; 
+            color: #94a3b8;
+        }
+        .legend-dot { 
+            width: 12px; 
+            height: 12px; 
+            border-radius: 50%;
+        }
+
+        .dependency-graph {
+            background: #1e293b; 
+            border-radius: 12px; 
+            padding: 1.5rem; 
+            margin: 2rem auto;
+            max-width: 1400px; 
+            border: 1px solid #334155;
+        }
+        .dependency-graph h3 { 
+            text-align: center; 
+            margin-bottom: 1rem; 
+            color: #e2e8f0;
+        }
+        .dep-grid {
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 1rem; 
+            justify-content: center;
+        }
+        .dep-node {
+            background: #0f172a; 
+            border: 2px solid; 
+            padding: 0.5rem 1rem; 
+            border-radius: 8px;
+            font-size: 0.8rem; 
+            font-weight: 600;
+        }
+        .dep-arrow { 
+            color: #64748b; 
+            font-size: 1.2rem; 
+            align-self: center;
+        }
+
+        @media (max-width: 768px) {
+            .components-grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.8rem; }
+            .phase-btn { padding: 0.5rem 1rem; font-size: 0.8rem; }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="header">
+        <h1>Datadog Architecture Evolution</h1>
+        <p>Microservices roadmap from 0 to 1,000,000 users</p>
+    </div>
+
+    <div class="phase-nav">
+        <button class="phase-btn active" onclick="showPhase('phase1')">Phase I<br><small>0-10 Users</small></button>
+        <button class="phase-btn" onclick="showPhase('phase2')">Phase II<br><small>10-100 Users</small></button>
+        <button class="phase-btn" onclick="showPhase('phase3')">Phase III<br><small>100-1K Users</small></button>
+        <button class="phase-btn" onclick="showPhase('phase4')">Phase IV<br><small>1K-10K Users</small></button>
+        <button class="phase-btn" onclick="showPhase('phase5')">Phase V<br><small>10K-100K Users</small></button>
+        <button class="phase-btn" onclick="showPhase('phase6')">Phase VI<br><small>100K-1M Users</small></button>
+    </div>
+
+    <!-- PHASE I -->
+    <div id="phase1" class="phase-section active">
+        <div class="phase-header">
+            <h2>Phase I: Foundation & Core Telemetry</h2>
+            <span class="user-range">0 → 10 Users</span>
+            <p class="desc">Build the absolute minimum viable monitoring platform. Single-tenant mindset, monolithic-adjacent services, manual onboarding. Focus: get data in, store it, visualize it.</p>
+        </div>
+        <div class="components-grid">
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-core">M</div>
+                    <div class="card-title">Metrics Ingestion Pipeline</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Collects time-series metrics from agents, buffers via queue, validates schema, and routes to storage layers efficiently.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Decouples collection from storage, allowing independent scaling of ingestion throughput versus query workload.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Prevents data loss during spikes, normalizes diverse metric formats, enables backpressure handling, and isolates write hotspots from read paths.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-core">T</div>
+                    <div class="card-title">Time-Series Database</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Specialized store for timestamped metric data with high compression, fast range scans, and downsampling capabilities.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Generic databases cannot handle write-heavy sequential loads and time-range queries cost-effectively at scale.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Solves high-cardinality storage, reduces disk footprint via compression, enables sub-second aggregation over millions of active series.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-core">Q</div>
+                    <div class="card-title">Query Engine / API</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>RESTful interface translating user requests into optimized database queries with caching and basic aggregation.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Isolates query complexity from storage nodes, enabling independent optimization of read latency and API versioning.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Abstracts storage schema changes from clients, prevents expensive ad-hoc queries from crashing ingestion paths.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-feat">UI</div>
+                    <div class="card-title">Web Dashboard UI</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Single-page application rendering charts, host maps, and metric explorers consuming the Query API directly.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Decouples presentation layer from backend, enabling independent frontend deployments and A/B testing.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Provides intuitive visualization of raw metrics, reduces time-to-insight, and democratizes monitoring for non-engineers.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-infra">A</div>
+                    <div class="card-title">Identity & Auth Service</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Handles user registration, JWT issuance, session management, and basic password-based authentication flows.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Centralizes security concerns, ensuring consistent auth enforcement across all services without code duplication.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Eliminates auth sprawl, simplifies audit compliance, and provides a single revocation point for compromised sessions.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-infra">D</div>
+                    <div class="card-title">Host Agent Daemon</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Lightweight process deployed on customer hosts collecting system metrics, dogstatsd packets, and forwarding upstream.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Runs outside the cloud boundary on customer infrastructure, requiring autonomous operation and minimal resource use.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Brings visibility into customer environments without firewall changes, buffers during network partitions, and auto-discovers services.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHASE II -->
+    <div id="phase2" class="phase-section">
+        <div class="phase-header">
+            <h2>Phase II: Logs & Alerting Foundation</h2>
+            <span class="user-range">10 → 100 Users</span>
+            <p class="desc">Users need correlation between metrics and logs. Alerting becomes critical as teams depend on the platform for incident awareness. Onboarding must be self-service.</p>
+        </div>
+        <div class="components-grid">
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">M</div>
+                    <div class="card-title">Metrics Ingestion Pipeline</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Collects time-series metrics from agents, buffers via queue, validates schema, and routes to storage layers efficiently.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Decouples collection from storage, allowing independent scaling of ingestion throughput versus query workload.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Prevents data loss during spikes, normalizes diverse metric formats, enables backpressure handling, and isolates write hotspots.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">T</div>
+                    <div class="card-title">Time-Series Database</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Specialized store for timestamped metric data with high compression, fast range scans, and downsampling capabilities.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Generic databases cannot handle write-heavy sequential loads and time-range queries cost-effectively at scale.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Solves high-cardinality storage, reduces disk footprint via compression, enables sub-second aggregation over millions of active series.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">Q</div>
+                    <div class="card-title">Query Engine / API</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>RESTful interface translating user requests into optimized database queries with caching and basic aggregation.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Isolates query complexity from storage nodes, enabling independent optimization of read latency and API versioning.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Abstracts storage schema changes from clients, prevents expensive ad-hoc queries from crashing ingestion paths.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-feat">UI</div>
+                    <div class="card-title">Web Dashboard UI</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Single-page application rendering charts, host maps, and metric explorers consuming the Query API directly.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Decouples presentation layer from backend, enabling independent frontend deployments and A/B testing.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Provides intuitive visualization of raw metrics, reduces time-to-insight, and democratizes monitoring for non-engineers.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-infra">A</div>
+                    <div class="card-title">Identity & Auth Service</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Handles user registration, JWT issuance, session management, and basic password-based authentication flows.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Centralizes security concerns, ensuring consistent auth enforcement across all services without code duplication.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Eliminates auth sprawl, simplifies audit compliance, and provides a single revocation point for compromised sessions.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-infra">D</div>
+                    <div class="card-title">Host Agent Daemon</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Lightweight process deployed on customer hosts collecting system metrics, dogstatsd packets, and forwarding upstream.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Runs outside the cloud boundary on customer infrastructure, requiring autonomous operation and minimal resource use.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Brings visibility into customer environments without firewall changes, buffers during network partitions, and auto-discovers services.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-core">L</div>
+                    <div class="card-title">Log Ingestion Pipeline</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Accepts log streams via TCP/HTTP, applies parsing rules, extracts structured fields, and enriches with metadata tags.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Log traffic patterns differ from metrics: bursty, high volume, requiring different buffering and parsing strategies.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Handles multi-line stack traces, normalizes unstructured text, enables full-text search, and correlates logs with metric time windows.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-core">E</div>
+                    <div class="card-title">Log Storage & Index</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Inverted index store optimized for text search, field aggregations, and high-write throughput with configurable retention.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Time-series and text storage have fundamentally different access patterns, indexing overhead, and compression algorithms.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Enables grep-speed search over terabytes, field-based faceting, and cost-efficient tiered storage for compliance retention.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-mon">⚡</div>
+                    <div class="card-title">Alerting Engine</div>
+                    <span class="type-badge type-mon">Monitoring</span>
+                </div>
+                <div class="detail-box" style="border-color: #4ade80;">
+                    <h4>What is it?</h4>
+                    <p>Continuously evaluates metric and log thresholds, anomaly conditions, and composite multi-signal alert definitions.</p>
+                </div>
+                <div class="detail-box" style="border-color: #4ade80;">
+                    <h4>Why separate?</h4>
+                    <p>Alert evaluation requires streaming window computation and stateful tracking distinct from ad-hoc user queries.</p>
+                </div>
+                <div class="detail-box" style="border-color: #4ade80;">
+                    <h4>Problems solved</h4>
+                    <p>Reduces mean-time-to-detection, prevents alert fatigue via deduplication, and ensures 24/7 automated monitoring coverage.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-infra">N</div>
+                    <div class="card-title">Notification Router</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Dispatch service sending alerts via email, Slack, PagerDuty with retry logic, rate limiting, and escalation policies.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Notification delivery is unreliable by nature; isolating retries and third-party failures from core evaluation is critical.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Guarantees at-least-once delivery, buffers during provider outages, and centralizes contact preference management.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-infra">#</div>
+                    <div class="card-title">Metadata & Tagging Service</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Central registry mapping hosts, containers, and services to dimensions, tags, and ownership for query enrichment.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Metadata changes frequently and must propagate to all services without coupling every component to the discovery source.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Enables dynamic filtering by environment, maintains consistency across metrics/logs/traces, and powers cost allocation.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-feat">📊</div>
+                    <div class="card-title">Dashboard Builder</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Drag-and-drop interface for creating, saving, and sharing custom dashboards with templated variables and widgets.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Dashboard configuration is a write-heavy user activity that should not impact the read-heavy metric serving path.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Standardizes runbook visualization, enables team-specific views, and reduces repetitive chart creation for common infrastructure.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHASE III -->
+    <div id="phase3" class="phase-section">
+        <div class="phase-header">
+            <h2>Phase III: APM, Traces & Self-Service</h2>
+            <span class="user-range">100 → 1,000 Users</span>
+            <p class="desc">Engineering teams need distributed tracing to debug microservices. RBAC and team isolation become mandatory. Basic anomaly detection reduces manual threshold tuning.</p>
+        </div>
+        <div class="components-grid">
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">M</div>
+                    <div class="card-title">Metrics Ingestion Pipeline</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Collects time-series metrics from agents, buffers via queue, validates schema, and routes to storage layers efficiently.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Decouples collection from storage, allowing independent scaling of ingestion throughput versus query workload.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Prevents data loss during spikes, normalizes diverse metric formats, enables backpressure handling, and isolates write hotspots.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">T</div>
+                    <div class="card-title">Time-Series Database</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Specialized store for timestamped metric data with high compression, fast range scans, and downsampling capabilities.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Generic databases cannot handle write-heavy sequential loads and time-range queries cost-effectively at scale.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Solves high-cardinality storage, reduces disk footprint via compression, enables sub-second aggregation over millions of active series.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">Q</div>
+                    <div class="card-title">Query Engine / API</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>RESTful interface translating user requests into optimized database queries with caching and basic aggregation.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Isolates query complexity from storage nodes, enabling independent optimization of read latency and API versioning.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Abstracts storage schema changes from clients, prevents expensive ad-hoc queries from crashing ingestion paths.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-feat">UI</div>
+                    <div class="card-title">Web Dashboard UI</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Single-page application rendering charts, host maps, and metric explorers consuming the Query API directly.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Decouples presentation layer from backend, enabling independent frontend deployments and A/B testing.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Provides intuitive visualization of raw metrics, reduces time-to-insight, and democratizes monitoring for non-engineers.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-infra">A</div>
+                    <div class="card-title">Identity & Auth Service</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Handles user registration, JWT issuance, session management, and basic password-based authentication flows.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Centralizes security concerns, ensuring consistent auth enforcement across all services without code duplication.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Eliminates auth sprawl, simplifies audit compliance, and provides a single revocation point for compromised sessions.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-infra">D</div>
+                    <div class="card-title">Host Agent Daemon</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Lightweight process deployed on customer hosts collecting system metrics, dogstatsd packets, and forwarding upstream.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Runs outside the cloud boundary on customer infrastructure, requiring autonomous operation and minimal resource use.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Brings visibility into customer environments without firewall changes, buffers during network partitions, and auto-discovers services.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">L</div>
+                    <div class="card-title">Log Ingestion Pipeline</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Accepts log streams via TCP/HTTP, applies parsing rules, extracts structured fields, and enriches with metadata tags.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Log traffic patterns differ from metrics: bursty, high volume, requiring different buffering and parsing strategies.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Handles multi-line stack traces, normalizes unstructured text, enables full-text search, and correlates logs with metric time windows.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">E</div>
+                    <div class="card-title">Log Storage & Index</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Inverted index store optimized for text search, field aggregations, and high-write throughput with configurable retention.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Time-series and text storage have fundamentally different access patterns, indexing overhead, and compression algorithms.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Enables grep-speed search over terabytes, field-based faceting, and cost-efficient tiered storage for compliance retention.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-mon">⚡</div>
+                    <div class="card-title">Alerting Engine</div>
+                    <span class="type-badge type-mon">Monitoring</span>
+                </div>
+                <div class="detail-box" style="border-color: #4ade80;">
+                    <h4>What is it?</h4>
+                    <p>Continuously evaluates metric and log thresholds, anomaly conditions, and composite multi-signal alert definitions.</p>
+                </div>
+                <div class="detail-box" style="border-color: #4ade80;">
+                    <h4>Why separate?</h4>
+                    <p>Alert evaluation requires streaming window computation and stateful tracking distinct from ad-hoc user queries.</p>
+                </div>
+                <div class="detail-box" style="border-color: #4ade80;">
+                    <h4>Problems solved</h4>
+                    <p>Reduces mean-time-to-detection, prevents alert fatigue via deduplication, and ensures 24/7 automated monitoring coverage.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-infra">N</div>
+                    <div class="card-title">Notification Router</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Dispatch service sending alerts via email, Slack, PagerDuty with retry logic, rate limiting, and escalation policies.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Notification delivery is unreliable by nature; isolating retries and third-party failures from core evaluation is critical.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Guarantees at-least-once delivery, buffers during provider outages, and centralizes contact preference management.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-infra">#</div>
+                    <div class="card-title">Metadata & Tagging Service</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Central registry mapping hosts, containers, and services to dimensions, tags, and ownership for query enrichment.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Metadata changes frequently and must propagate to all services without coupling every component to the discovery source.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Enables dynamic filtering by environment, maintains consistency across metrics/logs/traces, and powers cost allocation.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-feat">📊</div>
+                    <div class="card-title">Dashboard Builder</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Drag-and-drop interface for creating, saving, and sharing custom dashboards with templated variables and widgets.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Dashboard configuration is a write-heavy user activity that should not impact the read-heavy metric serving path.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Standardizes runbook visualization, enables team-specific views, and reduces repetitive chart creation for common infrastructure.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-core">S</div>
+                    <div class="card-title">APM Trace Ingestion</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Collects distributed traces from language-specific libraries, assembles spans into traces, and samples based on latency errors.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Trace volume is orders of magnitude larger than metrics, requiring intelligent head-based sampling and tail-based refinement.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Enables distributed request path reconstruction, identifies latency bottlenecks across service boundaries, and maps dependencies automatically.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-core">↔</div>
+                    <div class="card-title">Trace Storage & Index</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Columnar store for spans and traces supporting traceID lookup, service graph aggregation, and error rate calculations.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Trace data is write-heavy with rare random reads by traceID, needing different partitioning than time-series or logs.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Stores high-cardinality span attributes, powers service topology maps, and retains critical traces for post-mortem debugging.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-ana">AI</div>
+                    <div class="card-title">Anomaly Detection Engine</div>
+                    <span class="type-badge type-ana">Analytics</span>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>What is it?</h4>
+                    <p>Statistical ML service learning baseline patterns to flag deviations without manually configured static thresholds.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Why separate?</h4>
+                    <p>Model training and inference are compute-intensive batch jobs that must not interfere with real-time serving paths.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Problems solved</h4>
+                    <p>Eliminates threshold maintenance toil, catches unknown-unknown failures, and adapts to seasonal usage patterns automatically.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-infra">G</div>
+                    <div class="card-title">API Gateway & Rate Limiter</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Edge proxy handling authentication, rate limiting, request routing, and API versioning for all external traffic.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Centralizes cross-cutting concerns so backend services remain pure business logic without auth or quota code.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Prevents noisy-neighbor resource exhaustion, enables graceful degradation, and provides a unified observability hook for all requests.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-biz">👥</div>
+                    <div class="card-title">User & Team Management</div>
+                    <span class="type-badge type-biz">Business</span>
+                </div>
+                <div class="detail-box" style="border-color: #60a5fa;">
+                    <h4>What is it?</h4>
+                    <p>RBAC service managing organizations, teams, roles, and data access boundaries for multi-tenant isolation.</p>
+                </div>
+                <div class="detail-box" style="border-color: #60a5fa;">
+                    <h4>Why separate?</h4>
+                    <p>Authorization policies evolve independently and must be queryable by all services without embedding in each binary.</p>
+                </div>
+                <div class="detail-box" style="border-color: #60a5fa;">
+                    <h4>Problems solved</h4>
+                    <p>Enforces least-privilege data access, supports enterprise SSO integration, and isolates tenant resources for compliance.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHASE IV -->
+    <div id="phase4" class="phase-section">
+        <div class="phase-header">
+            <h2>Phase IV: Scale, Synthetics & Multi-Region</h2>
+            <span class="user-range">1,000 → 10,000 Users</span>
+            <p class="desc">Enterprise customers demand data residency and SLA guarantees. Synthetic monitoring provides external validation. Stream processing enables real-time analytics at scale.</p>
+        </div>
+        <div class="components-grid">
+            <!-- Carried components (abbreviated) -->
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">M</div>
+                    <div class="card-title">Metrics Ingestion Pipeline</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Collects time-series metrics from agents, buffers via queue, validates schema, and routes to storage layers efficiently.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Decouples collection from storage, allowing independent scaling of ingestion throughput versus query workload.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Prevents data loss during spikes, normalizes diverse metric formats, enables backpressure handling, and isolates write hotspots.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">T</div>
+                    <div class="card-title">Time-Series Database</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Specialized store for timestamped metric data with high compression, fast range scans, and downsampling capabilities.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Generic databases cannot handle write-heavy sequential loads and time-range queries cost-effectively at scale.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Solves high-cardinality storage, reduces disk footprint via compression, enables sub-second aggregation over millions of active series.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">Q</div>
+                    <div class="card-title">Query Engine / API</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>RESTful interface translating user requests into optimized database queries with caching and basic aggregation.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Isolates query complexity from storage nodes, enabling independent optimization of read latency and API versioning.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Abstracts storage schema changes from clients, prevents expensive ad-hoc queries from crashing ingestion paths.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">L</div>
+                    <div class="card-title">Log Ingestion Pipeline</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Accepts log streams via TCP/HTTP, applies parsing rules, extracts structured fields, and enriches with metadata tags.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Log traffic patterns differ from metrics: bursty, high volume, requiring different buffering and parsing strategies.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Handles multi-line stack traces, normalizes unstructured text, enables full-text search, and correlates logs with metric time windows.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-mon">⚡</div>
+                    <div class="card-title">Alerting Engine</div>
+                    <span class="type-badge type-mon">Monitoring</span>
+                </div>
+                <div class="detail-box" style="border-color: #4ade80;">
+                    <h4>What is it?</h4>
+                    <p>Continuously evaluates metric and log thresholds, anomaly conditions, and composite multi-signal alert definitions.</p>
+                </div>
+                <div class="detail-box" style="border-color: #4ade80;">
+                    <h4>Why separate?</h4>
+                    <p>Alert evaluation requires streaming window computation and stateful tracking distinct from ad-hoc user queries.</p>
+                </div>
+                <div class="detail-box" style="border-color: #4ade80;">
+                    <h4>Problems solved</h4>
+                    <p>Reduces mean-time-to-detection, prevents alert fatigue via deduplication, and ensures 24/7 automated monitoring coverage.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">S</div>
+                    <div class="card-title">APM Trace Ingestion</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Collects distributed traces from language-specific libraries, assembles spans into traces, and samples based on latency errors.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Trace volume is orders of magnitude larger than metrics, requiring intelligent head-based sampling and tail-based refinement.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Enables distributed request path reconstruction, identifies latency bottlenecks across service boundaries, and maps dependencies automatically.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-ana">AI</div>
+                    <div class="card-title">Anomaly Detection Engine</div>
+                    <span class="type-badge type-ana">Analytics</span>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>What is it?</h4>
+                    <p>Statistical ML service learning baseline patterns to flag deviations without manually configured static thresholds.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Why separate?</h4>
+                    <p>Model training and inference are compute-intensive batch jobs that must not interfere with real-time serving paths.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Problems solved</h4>
+                    <p>Eliminates threshold maintenance toil, catches unknown-unknown failures, and adapts to seasonal usage patterns automatically.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-infra">G</div>
+                    <div class="card-title">API Gateway & Rate Limiter</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Edge proxy handling authentication, rate limiting, request routing, and API versioning for all external traffic.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Centralizes cross-cutting concerns so backend services remain pure business logic without auth or quota code.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Prevents noisy-neighbor resource exhaustion, enables graceful degradation, and provides a unified observability hook for all requests.</p>
+                </div>
+            </div>
+
+            <!-- NEW COMPONENTS -->
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-feat">🌐</div>
+                    <div class="card-title">Synthetic Monitoring</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Global probe network executing scripted API and browser tests from multiple geographic locations at configurable intervals.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Probes run outside customer networks and generate external traffic patterns completely different from agent-reported data.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Validates SLA from user perspective, detects regional outages invisible to internal metrics, and monitors third-party dependencies.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-feat">📱</div>
+                    <div class="card-title">RUM (Real User Monitoring)</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Browser and mobile SDK capturing page loads, errors, resources, and user sessions with performance timing details.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Client-side data requires CORS handling, session stitching, and privacy-compliant PII scrubbing not needed for server telemetry.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Correlates frontend performance with backend traces, identifies JavaScript errors in the wild, and measures Core Web Vitals.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-ana">🔍</div>
+                    <div class="card-title">Advanced Query Engine</div>
+                    <span class="type-badge type-ana">Analytics</span>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>What is it?</h4>
+                    <p>SQL-like analytical processor supporting joins across metrics, logs, and traces with window functions and aggregations.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Why separate?</h4>
+                    <p>Complex analytical queries are resource-heavy and require different execution engines than simple point lookups.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Problems solved</h4>
+                    <p>Enables business-level SLO analysis, cross-signal correlation investigations, and custom reporting without ETL pipelines.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-infra">⚙</div>
+                    <div class="card-title">Stream Processing Platform</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Distributed stream processor computing real-time aggregations, sliding windows, and event-time joins on ingestion fly.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Stateful stream computation requires checkpointing, exactly-once semantics, and backpressure handling distinct from batch.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Delivers sub-second alert evaluation, powers live dashboards without polling, and enables complex event processing rules.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-infra">🌍</div>
+                    <div class="card-title">Multi-Region Orchestrator</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Control plane managing cross-region replication, data residency rules, failover routing, and tenant placement policies.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Region topology and compliance logic is policy-heavy and must remain independent of data plane services.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Ensures GDPR/data-sovereignty compliance, reduces cross-border latency, and provides disaster recovery without manual intervention.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-infra">💾</div>
+                    <div class="card-title">Data Retention & Archival</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Policy engine tiering hot, warm, and cold data to object storage with configurable retention and rehydration capabilities.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Storage cost optimization is a background concern that should not complicate the hot-path ingestion and query logic.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Reduces storage costs by 80% for historical data, maintains compliance retention, and enables long-term trend analysis.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHASE V -->
+    <div id="phase5" class="phase-section">
+        <div class="phase-header">
+            <h2>Phase V: Security, Enterprise & Intelligence</h2>
+            <span class="user-range">10,000 → 100,000 Users</span>
+            <p class="desc">Security teams adopt the platform for SIEM. Large enterprises require incident management, advanced RBAC, and usage-based billing. ML becomes production-critical.</p>
+        </div>
+        <div class="components-grid">
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">M</div>
+                    <div class="card-title">Metrics Ingestion Pipeline</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Collects time-series metrics from agents, buffers via queue, validates schema, and routes to storage layers efficiently.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Decouples collection from storage, allowing independent scaling of ingestion throughput versus query workload.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Prevents data loss during spikes, normalizes diverse metric formats, enables backpressure handling, and isolates write hotspots.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">L</div>
+                    <div class="card-title">Log Ingestion Pipeline</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Accepts log streams via TCP/HTTP, applies parsing rules, extracts structured fields, and enriches with metadata tags.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Log traffic patterns differ from metrics: bursty, high volume, requiring different buffering and parsing strategies.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Handles multi-line stack traces, normalizes unstructured text, enables full-text search, and correlates logs with metric time windows.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">S</div>
+                    <div class="card-title">APM Trace Ingestion</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Collects distributed traces from language-specific libraries, assembles spans into traces, and samples based on latency errors.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Trace volume is orders of magnitude larger than metrics, requiring intelligent head-based sampling and tail-based refinement.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Enables distributed request path reconstruction, identifies latency bottlenecks across service boundaries, and maps dependencies automatically.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-infra">G</div>
+                    <div class="card-title">API Gateway & Rate Limiter</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Edge proxy handling authentication, rate limiting, request routing, and API versioning for all external traffic.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Centralizes cross-cutting concerns so backend services remain pure business logic without auth or quota code.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Prevents noisy-neighbor resource exhaustion, enables graceful degradation, and provides a unified observability hook for all requests.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-infra">⚙</div>
+                    <div class="card-title">Stream Processing Platform</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Distributed stream processor computing real-time aggregations, sliding windows, and event-time joins on ingestion fly.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Stateful stream computation requires checkpointing, exactly-once semantics, and backpressure handling distinct from batch.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Delivers sub-second alert evaluation, powers live dashboards without polling, and enables complex event processing rules.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-feat">🌐</div>
+                    <div class="card-title">Synthetic Monitoring</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Global probe network executing scripted API and browser tests from multiple geographic locations at configurable intervals.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Probes run outside customer networks and generate external traffic patterns completely different from agent-reported data.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Validates SLA from user perspective, detects regional outages invisible to internal metrics, and monitors third-party dependencies.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-feat">🛡</div>
+                    <div class="card-title">Security Monitoring / SIEM</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Detects threats by correlating security signals, audit logs, and runtime anomalies with curated detection rules.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Security data requires immutable storage, strict access controls, and compliance audit trails distinct from operational telemetry.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Identifies insider threats, detects runtime attacks like cryptomining, and automates compliance reporting for SOC2 and PCI.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-feat">🌐</div>
+                    <div class="card-title">Network Performance Monitoring</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>eBPF-based collector capturing network flows, DNS resolution, and TCP retransmissions between services and zones.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Kernel-level packet inspection requires privileged access and specialized processing pipelines not suitable for standard agents.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Diagnoses inter-service latency, identifies DNS bottlenecks, and maps cloud network topology without packet mirroring hardware.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-feat">🚨</div>
+                    <div class="card-title">Incident Management</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>On-call scheduling, incident timeline assembly, runbook integration, and post-mortem template generation platform.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Incident workflow is human-centric and integrates with external paging tools, distinct from automated signal generation.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Reduces MTTR via structured response, preserves incident context across shift changes, and enforces blameless post-mortems.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-ana">🧠</div>
+                    <div class="card-title">ML Platform & Forecasting</div>
+                    <span class="type-badge type-ana">Analytics</span>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>What is it?</h4>
+                    <p>Feature store, model registry, and inference cluster powering capacity forecasting, noise reduction, and root-cause ranking.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Why separate?</h4>
+                    <p>ML lifecycle needs experiment tracking, GPU scheduling, and A/B testing frameworks alien to standard microservices.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Problems solved</h4>
+                    <p>Predicts disk-full events, ranks alert importance, and identifies correlated failures across thousands of dimensions automatically.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-biz">💰</div>
+                    <div class="card-title">Billing & Metering Engine</div>
+                    <span class="type-badge type-biz">Business</span>
+                </div>
+                <div class="detail-box" style="border-color: #60a5fa;">
+                    <h4>What is it?</h4>
+                    <p>Usage aggregation pipeline computing billable metrics, log volume, trace spans, and host-hours with tiered pricing.</p>
+                </div>
+                <div class="detail-box" style="border-color: #60a5fa;">
+                    <h4>Why separate?</h4>
+                    <p>Billing logic is business-critical, audit-sensitive, and changes frequently with pricing strategy independent of engineering.</p>
+                </div>
+                <div class="detail-box" style="border-color: #60a5fa;">
+                    <h4>Problems solved</h4>
+                    <p>Enables usage-based pricing accuracy, prevents revenue leakage, and provides real-time spend visibility to prevent bill shock.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-feat">📝</div>
+                    <div class="card-title">Collaboration & Notebooks</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Shared investigation notebooks combining live queries, markdown, and annotations for team debugging and runbooks.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Collaboration state is document-oriented with real-time editing needs, separate from time-series data stores.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Preserves investigative context, enables async handoffs across time zones, and standardizes recurring operational procedures.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHASE VI -->
+    <div id="phase6" class="phase-section">
+        <div class="phase-header">
+            <h2>Phase VI: Global Scale & Platform Ecosystem</h2>
+            <span class="user-range">100,000 → 1,000,000 Users</span>
+            <p class="desc">Global edge ingestion, 500+ integrations, developer marketplace, and advanced governance. The platform becomes critical infrastructure for the internet.</p>
+        </div>
+        <div class="components-grid">
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">M</div>
+                    <div class="card-title">Metrics Ingestion Pipeline</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Collects time-series metrics from agents, buffers via queue, validates schema, and routes to storage layers efficiently.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Decouples collection from storage, allowing independent scaling of ingestion throughput versus query workload.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Prevents data loss during spikes, normalizes diverse metric formats, enables backpressure handling, and isolates write hotspots.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">L</div>
+                    <div class="card-title">Log Ingestion Pipeline</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Accepts log streams via TCP/HTTP, applies parsing rules, extracts structured fields, and enriches with metadata tags.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Log traffic patterns differ from metrics: bursty, high volume, requiring different buffering and parsing strategies.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Handles multi-line stack traces, normalizes unstructured text, enables full-text search, and correlates logs with metric time windows.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-core">S</div>
+                    <div class="card-title">APM Trace Ingestion</div>
+                    <span class="type-badge type-core">Core</span>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>What is it?</h4>
+                    <p>Collects distributed traces from language-specific libraries, assembles spans into traces, and samples based on latency errors.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Why separate?</h4>
+                    <p>Trace volume is orders of magnitude larger than metrics, requiring intelligent head-based sampling and tail-based refinement.</p>
+                </div>
+                <div class="detail-box" style="border-color: #f87171;">
+                    <h4>Problems solved</h4>
+                    <p>Enables distributed request path reconstruction, identifies latency bottlenecks across service boundaries, and maps dependencies automatically.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-infra">⚙</div>
+                    <div class="card-title">Stream Processing Platform</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Distributed stream processor computing real-time aggregations, sliding windows, and event-time joins on ingestion fly.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Stateful stream computation requires checkpointing, exactly-once semantics, and backpressure handling distinct from batch.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Delivers sub-second alert evaluation, powers live dashboards without polling, and enables complex event processing rules.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-feat">🛡</div>
+                    <div class="card-title">Security Monitoring / SIEM</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Detects threats by correlating security signals, audit logs, and runtime anomalies with curated detection rules.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Security data requires immutable storage, strict access controls, and compliance audit trails distinct from operational telemetry.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Identifies insider threats, detects runtime attacks like cryptomining, and automates compliance reporting for SOC2 and PCI.</p>
+                </div>
+            </div>
+
+            <div class="component-card carried">
+                <div class="card-header">
+                    <div class="icon type-ana">🧠</div>
+                    <div class="card-title">ML Platform & Forecasting</div>
+                    <span class="type-badge type-ana">Analytics</span>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>What is it?</h4>
+                    <p>Feature store, model registry, and inference cluster powering capacity forecasting, noise reduction, and root-cause ranking.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Why separate?</h4>
+                    <p>ML lifecycle needs experiment tracking, GPU scheduling, and A/B testing frameworks alien to standard microservices.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Problems solved</h4>
+                    <p>Predicts disk-full events, ranks alert importance, and identifies correlated failures across thousands of dimensions automatically.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-infra">🌐</div>
+                    <div class="card-title">Global Edge Ingestion</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Planet-scale POP network accepting telemetry at network edge, terminating TLS, and replicating to core regions.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Edge nodes must be lightweight, geographically distributed, and resilient to partition from core data centers.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Reduces ingress latency globally, absorbs DDoS volume, and provides regional data-sovereignty enforcement at the border.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-feat">🔌</div>
+                    <div class="card-title">Integration Marketplace</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Catalog and runtime for 500+ vendor integrations, custom check definitions, and webhook-based outbound actions.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Third-party integration code is untrusted, requiring sandboxing, versioning, and isolation from core platform services.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Extends platform coverage without engineering bottlenecks, enables partner ecosystem growth, and supports custom business logic.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-biz">🔒</div>
+                    <div class="card-title">Governance & Compliance</div>
+                    <span class="type-badge type-biz">Business</span>
+                </div>
+                <div class="detail-box" style="border-color: #60a5fa;">
+                    <h4>What is it?</h4>
+                    <p>Policy engine enforcing data retention, PII masking, audit logging, and access certification across all signals.</p>
+                </div>
+                <div class="detail-box" style="border-color: #60a5fa;">
+                    <h4>Why separate?</h4>
+                    <p>Compliance rules are legal constructs that change with jurisdiction and must be enforced uniformly without service awareness.</p>
+                </div>
+                <div class="detail-box" style="border-color: #60a5fa;">
+                    <h4>Problems solved</h4>
+                    <p>Automates GDPR right-to-erasure, enforces data residency, and generates compliance evidence for enterprise security reviews.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-ana">🔗</div>
+                    <div class="card-title">Federated Query Engine</div>
+                    <span class="type-badge type-ana">Analytics</span>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>What is it?</h4>
+                    <p>Cross-region query planner decomposing user requests, executing partials locally, and aggregating global results.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Why separate?</h4>
+                    <p>Federated planning is a meta-concern requiring topology awareness and cost-based optimization across heterogeneous stores.</p>
+                </div>
+                <div class="detail-box" style="border-color: #c084fc;">
+                    <h4>Problems solved</h4>
+                    <p>Enables unified dashboards across regions, respects data-sovereignty boundaries, and optimizes query cost via pushdown.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-infra">🎛</div>
+                    <div class="card-title">Control Plane & Fleet Mgmt</div>
+                    <span class="type-badge type-infra">Infrastructure</span>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>What is it?</h4>
+                    <p>Multi-tenant orchestrator managing agent configurations, feature flags, rollout schedules, and canary deployments.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Why separate?</h4>
+                    <p>Fleet control is management-plane traffic that must remain available even when data plane is under extreme load.</p>
+                </div>
+                <div class="detail-box" style="border-color: #94a3b8;">
+                    <h4>Problems solved</h4>
+                    <p>Enables safe agent updates globally, supports tenant-specific feature tiers, and automates remediation of misconfigurations.</p>
+                </div>
+            </div>
+
+            <div class="component-card new">
+                <div class="card-header">
+                    <div class="icon type-feat">📦</div>
+                    <div class="card-title">Developer SDK & APIs</div>
+                    <span class="type-badge type-feat">Feature</span>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>What is it?</h4>
+                    <p>Public SDKs, Terraform providers, and GraphQL endpoints enabling programmatic platform extension and infrastructure-as-code.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Why separate?</h4>
+                    <p>Developer-facing interfaces require long-term stability guarantees, versioning discipline, and documentation independent of internal services.</p>
+                </div>
+                <div class="detail-box" style="border-color: #fb923c;">
+                    <h4>Problems solved</h4>
+                    <p>Enables GitOps workflows, automates tenant provisioning, and allows customers to embed observability into their own products.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background: #f87171;"></div> Core</div>
+        <div class="legend-item"><div class="legend-dot" style="background: #94a3b8;"></div> Infrastructure</div>
+        <div class="legend-item"><div class="legend-dot" style="background: #4ade80;"></div> Monitoring</div>
+        <div class="legend-item"><div class="legend-dot" style="background: #c084fc;"></div> Analytics</div>
+        <div class="legend-item"><div class="legend-dot" style="background: #60a5fa;"></div> Business</div>
+        <div class="legend-item"><div class="legend-dot" style="background: #fb923c;"></div> Feature</div>
+    </div>
+
+    <script>
+        function showPhase(phaseId) {
+            document.querySelectorAll('.phase-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(phaseId).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
