@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp System Design - Phase Evolution</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg-primary: #0b1120;
+    --bg-secondary: #151e32;
+    --bg-card: #1e293b;
+    --bg-hover: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --accent-blue: #3b82f6;
+    --accent-green: #10b981;
+    --accent-purple: #8b5cf6;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-yellow: #eab308;
+    --border: #334155;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { 
+    font-family: 'Inter', sans-serif; 
+    background: var(--bg-primary); 
+    color: var(--text-primary); 
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+
+  header { text-align: center; margin-bottom: 50px; }
+  header h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  header p { color: var(--text-secondary); font-size: 1.1rem; max-width: 700px; margin: 0 auto; }
+
+  /* Phase Selector */
+  .phase-selector { 
+    display: flex; 
+    justify-content: center; 
+    gap: 15px; 
+    margin-bottom: 40px; 
+    flex-wrap: wrap;
+  }
+  .phase-btn { 
+    position: relative;
+    padding: 16px 28px; 
+    border: 2px solid var(--border); 
+    border-radius: 12px; 
+    background: var(--bg-secondary); 
+    color: var(--text-secondary); 
+    cursor: pointer; 
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 0.95rem;
+    min-width: 180px;
+    text-align: center;
+  }
+  .phase-btn:hover { border-color: var(--accent-blue); transform: translateY(-2px); }
+  .phase-btn.active { 
+    background: linear-gradient(135deg, #3b82f6, #2563eb); 
+    color: white; 
+    border-color: transparent;
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+  }
+  .phase-btn .users { display: block; font-size: 0.8rem; font-weight: 400; opacity: 0.9; margin-top: 4px; }
+
+  /* Phase Info */
+  .phase-info { 
+    text-align: center; 
+    margin-bottom: 30px; 
+    padding: 20px; 
+    background: var(--bg-secondary); 
+    border-radius: 12px; 
+    border-left: 4px solid var(--accent-blue);
+  }
+  .phase-info h2 { font-size: 1.5rem; margin-bottom: 8px; }
+  .phase-info p { color: var(--text-secondary); max-width: 800px; margin: 0 auto; }
+
+  /* Evolution Track */
+  .evolution-track { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    margin: 30px 0 40px; 
+    padding: 0 20px;
+    position: relative;
+  }
+  .evolution-track::before { 
+    content: ''; 
+    position: absolute; 
+    top: 50%; 
+    left: 40px; 
+    right: 40px; 
+    height: 4px; 
+    background: var(--bg-hover); 
+    z-index: 0; 
+    border-radius: 2px;
+  }
+  .evolution-step { 
+    width: 50px; 
+    height: 50px; 
+    border-radius: 50%; 
+    background: var(--bg-card); 
+    border: 3px solid var(--bg-hover);
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    position: relative; 
+    z-index: 1; 
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+  }
+  .evolution-step.active { 
+    background: var(--accent-blue); 
+    border-color: var(--accent-blue); 
+    color: white;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  }
+  .evolution-step.completed { 
+    background: var(--accent-green); 
+    border-color: var(--accent-green); 
+    color: white;
+  }
+
+  /* Carousel */
+  .section-title { font-size: 1.3rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+  .section-title .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent-blue); }
+
+  .carousel-wrapper { position: relative; margin-bottom: 30px; }
+  .carousel { 
+    display: flex; 
+    gap: 20px; 
+    overflow-x: auto; 
+    padding: 20px 10px; 
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: var(--bg-hover) var(--bg-secondary);
+  }
+  .carousel::-webkit-scrollbar { height: 8px; }
+  .carousel::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 4px; }
+  .carousel::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 4px; }
+
+  .component-card { 
+    min-width: 300px; 
+    max-width: 300px;
+    background: var(--bg-card); 
+    border-radius: 16px; 
+    padding: 24px; 
+    scroll-snap-align: start; 
+    cursor: pointer; 
+    transition: all 0.3s ease; 
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .component-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--card-color, var(--accent-blue));
+  }
+  .component-card:hover { 
+    transform: translateY(-8px); 
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+    border-color: var(--card-color, var(--accent-blue));
+  }
+  .component-card.selected { 
+    border-color: var(--card-color, var(--accent-blue));
+    background: var(--bg-secondary);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  }
+
+  .card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px; }
+  .card-title { font-size: 1.1rem; font-weight: 600; line-height: 1.3; }
+  .card-phase { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; background: var(--bg-hover); color: var(--text-secondary); font-weight: 500; }
+
+  .type-badge { 
+    display: inline-flex; 
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px; 
+    border-radius: 20px; 
+    font-size: 0.8rem; 
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 0.3px;
+  }
+  .type-core { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+  .type-infra { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+  .type-feature { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+  .type-monitor { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+  .type-analytics { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+  .type-business { background: rgba(234, 179, 8, 0.15); color: #facc15; }
+
+  .card-desc { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px; }
+  .card-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+  .meta-chip { font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; background: var(--bg-primary); color: var(--text-secondary); border: 1px solid var(--border); }
+
+  /* Previous Components */
+  .prev-section { margin-bottom: 30px; }
+  .prev-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+  .prev-chip { 
+    padding: 8px 16px; 
+    border-radius: 8px; 
+    background: var(--bg-secondary); 
+    color: var(--text-secondary); 
+    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+  }
+  .prev-chip:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .prev-chip .indicator { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Detail Panel */
+  .detail-panel { 
+    background: var(--bg-secondary); 
+    border-radius: 20px; 
+    padding: 40px; 
+    margin-top: 30px; 
+    display: none;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .detail-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: var(--detail-color, var(--accent-blue));
+  }
+  .detail-panel.active { 
+    display: block; 
+    animation: slideUp 0.4s ease;
+  }
+  @keyframes slideUp { 
+    from { opacity: 0; transform: translateY(30px); } 
+    to { opacity: 1; transform: translateY(0); } 
+  }
+
+  .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+  .detail-title { font-size: 1.8rem; font-weight: 700; }
+  .detail-subtitle { color: var(--text-secondary); margin-top: 5px; }
+  .detail-badges { display: flex; gap: 10px; }
+
+  .detail-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+    gap: 24px; 
+  }
+  .detail-box { 
+    background: var(--bg-card); 
+    padding: 28px; 
+    border-radius: 16px; 
+    border-left: 5px solid var(--box-color, var(--accent-blue));
+    transition: transform 0.2s;
+  }
+  .detail-box:hover { transform: translateX(5px); }
+  .detail-box h3 { 
+    font-size: 1rem; 
+    font-weight: 600; 
+    margin-bottom: 12px; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px;
+    color: var(--box-color, var(--accent-blue));
+  }
+  .detail-box p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; }
+  .word-count { font-size: 0.75rem; color: var(--text-secondary); opacity: 0.7; margin-top: 8px; font-style: italic; }
+
+  .close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: var(--bg-hover);
+    border: none;
+    color: var(--text-secondary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .close-btn:hover { background: var(--accent-red); color: white; }
+
+  /* Legend */
+  .legend { 
+    display: flex; 
+    justify-content: center; 
+    gap: 20px; 
+    margin-top: 40px; 
+    flex-wrap: wrap;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-secondary); }
+  .legend-dot { width: 14px; height: 14px; border-radius: 50%; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    header h1 { font-size: 1.8rem; }
+    .phase-btn { min-width: 140px; padding: 12px 16px; font-size: 0.85rem; }
+    .component-card { min-width: 260px; }
+    .detail-panel { padding: 24px; }
+    .detail-grid { grid-template-columns: 1fr; }
+  }
+
+  .hint-text { text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-top: 10px; font-style: italic; }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>WhatsApp System Architecture</h1>
+    <p>Microservice evolution from prototype to 100,000 users. Click any component card to reveal detailed architecture reasoning.</p>
+  </header>
+
+  <div class="phase-selector" id="phaseSelector"></div>
+
+  <div class="evolution-track" id="evolutionTrack"></div>
+
+  <div class="phase-info" id="phaseInfo"></div>
+
+  <div class="prev-section" id="prevSection"></div>
+
+  <div class="section-title"><span class="dot"></span> New Components in This Phase</div>
+  <div class="hint-text">Click a card to view detailed breakdown (What, Why, Problems Solved)</div>
+
+  <div class="carousel-wrapper">
+    <div class="carousel" id="carousel"></div>
+  </div>
+
+  <div class="detail-panel" id="detailPanel">
+    <button class="close-btn" onclick="closeDetail()">&times;</button>
+    <div class="detail-header">
+      <div>
+        <div class="detail-title" id="detailTitle"></div>
+        <div class="detail-subtitle" id="detailSubtitle"></div>
+      </div>
+      <div class="detail-badges" id="detailBadges"></div>
+    </div>
+    <div class="detail-grid" id="detailGrid"></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background: #60a5fa;"></div> Core Service</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #cbd5e1;"></div> Infrastructure</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #34d399;"></div> Feature</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #fbbf24;"></div> Monitoring</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #a78bfa;"></div> Analytics</div>
+    <div class="legend-item"><div class="legend-dot" style="background: #facc15;"></div> Business</div>
+  </div>
+</div>
+
+<script>
+const phases = [
+  { id: 1, name: "Phase I", range: "0 → 10 users", desc: "MVP stage. Single-server deployment, proof of concept, core messaging loop. Focus: get basic 1:1 chat working end-to-end.", color: "#3b82f6" },
+  { id: 2, name: "Phase II", range: "10 → 100 users", desc: "Early traction. Horizontal scaling begins, contact discovery, media sharing, and push notifications. Focus: social graph and rich content.", color: "#10b981" },
+  { id: 3, name: "Phase III", range: "100 → 1,000 users", desc: "Product-market fit. Search, stories, encryption, CDN, and rate limiting. Focus: privacy, content discovery, and abuse prevention.", color: "#8b5cf6" },
+  { id: 4, name: "Phase IV", range: "1,000 → 10,000 users", desc: "Scale-up. Voice/video calls, business APIs, analytics, moderation, and service mesh. Focus: monetization and real-time media.", color: "#f59e0b" },
+  { id: 5, name: "Phase V", range: "10,000 → 100,000 users", desc: "Regional scale. Global load balancing, data lakes, disaster recovery, compliance, and advanced caching. Focus: enterprise-grade reliability.", color: "#ef4444" }
+];
+
+const typeConfig = {
+  core: { label: "Core Service", class: "type-core", color: "#60a5fa" },
+  infra: { label: "Infrastructure", class: "type-infra", color: "#cbd5e1" },
+  feature: { label: "Feature", class: "type-feature", color: "#34d399" },
+  monitor: { label: "Monitoring", class: "type-monitor", color: "#fbbf24" },
+  analytics: { label: "Analytics", class: "type-analytics", color: "#a78bfa" },
+  business: { label: "Business", class: "type-business", color: "#facc15" }
+};
+
+const components = [
+  {
+    id: "client-gateway", name: "Client Gateway", type: "core", phase: 1,
+    short: "WebSocket connection manager for real-time bidirectional streaming between clients and servers.",
+    buildsOn: [],
+    what: "Manages persistent WebSocket connections from mobile and web clients for real-time bidirectional message streaming.",
+    why: "Isolates connection state from business logic, allowing independent scaling of concurrent user connections.",
+    problems: "Eliminates inefficient HTTP polling overhead, reliably handles thousands of concurrent persistent sockets, and cleanly decouples client connection lifecycle from core message processing logic."
+  },
+  {
+    id: "api-gateway", name: "API Gateway", type: "infra", phase: 1,
+    short: "Single entry point routing HTTP requests with auth, SSL termination, and routing logic.",
+    buildsOn: [],
+    what: "Single entry point routing HTTP requests to microservices with authentication, rate limiting, and SSL termination.",
+    why: "Abstracts internal service topology from clients, enabling independent deployment and versioning of backend services.",
+    problems: "Prevents direct client-to-service coupling, centralizes cross-cutting security concerns, simplifies traffic management, and enables unified API versioning across all platform features without client changes."
+  },
+  {
+    id: "user-service", name: "User Service", type: "core", phase: 1,
+    short: "Registration, authentication, profile management, and phone number verification.",
+    buildsOn: ["api-gateway"],
+    what: "Handles registration, authentication, profile management, and phone number verification for all platform users.",
+    why: "Centralizes identity and access control, ensuring consistent authentication across all WhatsApp features and services.",
+    problems: "Solves identity fragmentation across features, enables secure account recovery workflows, and provides a single source of truth for user metadata and permissions."
+  },
+  {
+    id: "message-service", name: "Message Service", type: "core", phase: 1,
+    short: "Core engine storing, routing, and delivering text messages reliably between users.",
+    buildsOn: ["client-gateway", "user-service"],
+    what: "Core messaging engine storing, routing, and delivering text messages between users and groups reliably.",
+    why: "Separates message lifecycle management from other features, enabling independent optimization for delivery guarantees.",
+    problems: "Ensures strict message ordering and persistence, handles offline delivery queues, prevents message loss during network failures, and maintains delivery receipts."
+  },
+  {
+    id: "database", name: "Database Layer", type: "infra", phase: 1,
+    short: "Relational store for user data, message metadata, and chat structures with ACID guarantees.",
+    buildsOn: [],
+    what: "Stores relational user data, message metadata, and chat structures with ACID guarantees and replication.",
+    why: "Centralized data management ensures consistency, backup strategies, and query optimization across all services.",
+    problems: "Prevents data inconsistency during concurrent updates, enables disaster recovery through replication, and supports complex transactional queries and reporting needs."
+  },
+  {
+    id: "cache", name: "Cache Layer", type: "infra", phase: 1,
+    short: "In-memory hot data storage for sessions, recent messages, and presence state.",
+    buildsOn: ["database"],
+    what: "Provides in-memory hot data storage for sessions, recent messages, and presence using distributed key-value stores.",
+    why: "Repeated database queries for frequently accessed data cause latency and load unacceptable for real-time chat.",
+    problems: "Reduces database load by orders of magnitude, delivers sub-millisecond data reads, and maintains session state consistently across stateless service instances."
+  },
+  {
+    id: "object-storage", name: "Object Storage", type: "infra", phase: 1,
+    short: "Durable blob repository for encrypted media files and message backup archives.",
+    buildsOn: [],
+    what: "Durable blob repository for encrypted media files, documents, voice notes, and message backup archives.",
+    why: "Unstructured binary data requires different storage economics and access patterns than structured relational data.",
+    problems: "Provides infinite horizontal scaling for files, prevents relational database bloat, and ensures media durability with geographic redundancy and encryption."
+  },
+  {
+    id: "load-balancer", name: "Load Balancer", type: "infra", phase: 1,
+    short: "Distributes incoming traffic across instances using health checks and routing algorithms.",
+    buildsOn: [],
+    what: "Distributes incoming traffic across service instances using health checks and intelligent routing algorithms.",
+    why: "Required for horizontal scaling, ensuring no single server becomes a bottleneck or single point of failure.",
+    problems: "Enables zero-downtime deployments through rolling updates, prevents server overload during traffic bursts, and improves fault tolerance and request distribution."
+  },
+  {
+    id: "chat-service", name: "Chat Service", type: "core", phase: 2,
+    short: "Conversation metadata, group creation, participants, admin privileges, and thread organization.",
+    buildsOn: ["message-service", "user-service"],
+    what: "Manages conversation metadata, group creation, participant lists, admin privileges, and chat thread organization.",
+    why: "Distinguishes conversation structure from message content, allowing independent scaling of chat metadata operations.",
+    problems: "Handles complex group membership changes, maintains conversation state consistency across devices, and enables efficient thread querying without impacting message delivery."
+  },
+  {
+    id: "contact-service", name: "Contact Service", type: "core", phase: 2,
+    short: "Discovers and syncs phone contacts by matching address books against registered users.",
+    buildsOn: ["user-service"],
+    what: "Discovers and syncs phone contacts, matching address books against registered users for connection building.",
+    why: "Isolates contact graph operations from messaging, protecting privacy and enabling granular access control policies.",
+    problems: "Enables privacy-preserving contact discovery, reduces contact synchronization latency for large address books, and prevents unauthorized access to user social graphs."
+  },
+  {
+    id: "presence-service", name: "Presence Service", type: "feature", phase: 2,
+    short: "Tracks and broadcasts online status, last seen, and typing indicators.",
+    buildsOn: ["client-gateway", "cache"],
+    what: "Tracks and broadcasts online status, last seen timestamps, and typing indicators to conversation participants.",
+    why: "Ephemeral state differs from persistent data, requiring high-write throughput and low-latency broadcast patterns.",
+    problems: "Delivers real-time activity awareness to users, reduces unnecessary push notifications when recipients are online, and manages ephemeral state without database bloat."
+  },
+  {
+    id: "media-service", name: "Media Service", type: "core", phase: 2,
+    short: "Processes, compresses, encrypts, and serves images, videos, docs, and voice messages.",
+    buildsOn: ["object-storage", "message-service"],
+    what: "Processes, compresses, encrypts, and serves images, videos, documents, and voice messages uploaded by users.",
+    why: "Heavy I/O and CPU workloads must not block lightweight text messaging operations or degrade chat performance.",
+    problems: "Handles large file transfers efficiently, optimizes bandwidth usage through compression, and ensures encrypted media availability across all user devices and sessions."
+  },
+  {
+    id: "push-service", name: "Push Notification", type: "infra", phase: 2,
+    short: "Sends offline alerts via FCM and APNs when users disconnect from WebSocket gateways.",
+    buildsOn: ["message-service", "client-gateway"],
+    what: "Sends offline alerts via FCM and APNs when recipients are disconnected from WebSocket gateways.",
+    why: "Decouples device-specific push protocols from core messaging, supporting multiple platforms with unified logic.",
+    problems: "Ensures message awareness when users are offline, reduces battery drain from maintaining persistent connections, and handles platform-specific delivery differences transparently."
+  },
+  {
+    id: "message-queue", name: "Message Queue", type: "infra", phase: 2,
+    short: "Asynchronous event backbone for decoupled service communication and retry logic.",
+    buildsOn: ["message-service", "media-service"],
+    what: "Asynchronous event backbone for decoupled service communication, retry logic, and eventual consistency workflows.",
+    why: "Synchronous calls between services create cascading failures and tight coupling that prevent independent scaling.",
+    problems: "Absorbs traffic spikes without dropping data, enables reliable background processing, and cleanly decouples event producers from downstream consumers."
+  },
+  {
+    id: "monitoring", name: "Monitoring", type: "monitor", phase: 2,
+    short: "Distributed tracing, metrics, logs, and alerting for system health visibility.",
+    buildsOn: ["api-gateway", "load-balancer"],
+    what: "Distributed tracing, metrics collection, log aggregation, and alerting for system health and performance visibility.",
+    why: "Debugging distributed systems requires centralized visibility impossible to achieve by inspecting individual service logs.",
+    problems: "Reduces mean time to recovery during incidents, enables proactive performance anomaly detection, and provides optimization insights across the entire service mesh."
+  },
+  {
+    id: "search-service", name: "Search Service", type: "feature", phase: 3,
+    short: "Indexes and queries message content, captions, and contacts for fast retrieval.",
+    buildsOn: ["message-service", "chat-service", "database"],
+    what: "Indexes and queries message content, media captions, and contact names for fast conversation retrieval.",
+    why: "Full-text search requires specialized inverted indexes and ranking algorithms separate from transactional databases.",
+    problems: "Enables quick historical message retrieval across large chat histories, reduces client-side storage burden, and supports fuzzy matching with relevance ranking."
+  },
+  {
+    id: "stories", name: "Status/Stories", type: "feature", phase: 3,
+    short: "Ephemeral twenty-four-hour updates visible to selected contacts and groups.",
+    buildsOn: ["media-service", "presence-service", "object-storage"],
+    what: "Manages ephemeral twenty-four-hour photo, video, and text updates visible to selected contacts and groups.",
+    why: "Ephemeral content has distinct access patterns, TTL requirements, and broadcast semantics unlike persistent chat.",
+    problems: "Automates content expiration after twenty-four hours, manages privacy-aware broadcasting to selected audiences, and handles high-volume temporary media delivery efficiently."
+  },
+  {
+    id: "encryption", name: "E2E Encryption", type: "core", phase: 3,
+    short: "Signal Protocol key management, distribution, and transparent message encryption.",
+    buildsOn: ["message-service", "user-service"],
+    what: "Manages Signal Protocol key generation, distribution, verification, and transparent message encryption and decryption.",
+    why: "Cryptographic operations are computationally intensive and security-critical, requiring isolated hardened infrastructure.",
+    problems: "Protects message confidentiality even from server compromise, prevents man-in-the-middle attacks, and ensures forward secrecy for all conversations."
+  },
+  {
+    id: "rate-limiter", name: "Rate Limiter", type: "infra", phase: 3,
+    short: "Throttles API requests per user and IP to prevent abuse and cascading failures.",
+    buildsOn: ["api-gateway", "cache"],
+    what: "Throttles API requests per user and IP to prevent abuse, spam, and cascading service failures.",
+    why: "Centralized throttling protects all downstream services without implementing redundant logic in each microservice.",
+    problems: "Prevents DDoS and brute force attacks, ensures fair resource allocation among users, and maintains service availability during unexpected traffic spikes."
+  },
+  {
+    id: "cdn", name: "CDN", type: "infra", phase: 3,
+    short: "Edge-cached delivery network for fast media downloads across global regions.",
+    buildsOn: ["object-storage", "media-service"],
+    what: "Edge-cached content delivery network for fast media downloads and static assets across global regions.",
+    why: "Serving media from origin servers creates latency and bandwidth costs unacceptable for global user bases.",
+    problems: "Minimizes media download latency worldwide, dramatically reduces origin server bandwidth costs, and improves user experience on slow or mobile networks."
+  },
+  {
+    id: "call-service", name: "Voice/Video Call", type: "feature", phase: 4,
+    short: "WebRTC signaling and SFU routing for peer-to-peer and group calling.",
+    buildsOn: ["client-gateway", "presence-service", "message-queue"],
+    what: "Orchestrates WebRTC signaling, STUN and TURN relay, and SFU routing for peer-to-peer and group calling.",
+    why: "Real-time media streaming demands specialized low-latency infrastructure incompatible with standard HTTP request patterns.",
+    problems: "Enables high-quality audio and video communication, handles complex NAT traversal for connectivity, and manages adaptive bandwidth for varying networks."
+  },
+  {
+    id: "business-api", name: "Business API", type: "business", phase: 4,
+    short: "Verified business accounts, automated messaging APIs, and customer service tools.",
+    buildsOn: ["user-service", "message-service", "chat-service"],
+    what: "Provides verified business accounts, automated messaging APIs, catalog integration, and customer service tools.",
+    why: "Commercial use cases require distinct compliance, billing, and integration patterns separate from consumer chat.",
+    problems: "Enables scalable customer support automation, supports verified sender identities to prevent impersonation, and creates marketplace monetization opportunities for the platform."
+  },
+  {
+    id: "analytics", name: "Analytics Pipeline", type: "analytics", phase: 4,
+    short: "Collects and aggregates user behavior, message patterns, and system metrics.",
+    buildsOn: ["message-queue", "database", "monitoring"],
+    what: "Collects, processes, and aggregates user behavior, message patterns, and system metrics for business intelligence.",
+    why: "Analytical workloads are read-heavy and batch-oriented, conflicting with operational database performance requirements.",
+    problems: "Enables data-driven feature decisions, identifies performance bottlenecks proactively, supports capacity planning, and improves user retention through behavioral insights."
+  },
+  {
+    id: "moderation", name: "Moderation", type: "monitor", phase: 4,
+    short: "Scans media and messages for spam, illegal content, and policy violations.",
+    buildsOn: ["message-service", "media-service", "message-queue"],
+    what: "Scans shared media and messages for spam, illegal content, and policy violations using automated detection.",
+    why: "Content safety requires specialized ML models and human review workflows isolated from core messaging paths.",
+    problems: "Protects users from harmful content and scams, ensures regulatory compliance across regions, and reduces legal liability and platform abuse."
+  },
+  {
+    id: "service-discovery", name: "Service Discovery", type: "infra", phase: 4,
+    short: "Dynamic registry tracking available instances for automatic routing as containers scale.",
+    buildsOn: ["load-balancer", "api-gateway"],
+    what: "Dynamic registry tracking available service instances, enabling automatic routing as containers scale up or down.",
+    why: "Static IP configurations fail in elastic cloud environments where instances constantly appear and disappear.",
+    problems: "Enables auto-scaling and self-healing architectures, eliminates manual network configuration overhead, and supports dynamic microservice mesh routing without downtime."
+  },
+  {
+    id: "global-lb", name: "Global Load Balancer", type: "infra", phase: 5,
+    short: "Geo-DNS and anycast routing directing users to nearest healthy regional datacenter.",
+    buildsOn: ["load-balancer", "cdn", "service-discovery"],
+    what: "Geo-DNS and anycast routing directing users to the nearest healthy regional datacenter with failover.",
+    why: "Single-region deployments create unacceptable latency for global users and represent a massive single point of failure.",
+    problems: "Minimizes round-trip time for international users, enables automatic disaster recovery across regions, and distributes traffic based on regional capacity and health."
+  },
+  {
+    id: "data-lake", name: "Data Lake", type: "analytics", phase: 5,
+    short: "Centralized raw storage for historical messages, events, and logs for ML and compliance.",
+    buildsOn: ["analytics", "object-storage", "database"],
+    what: "Centralized raw storage for historical messages, events, and logs supporting machine learning and compliance querying.",
+    why: "Structured operational databases cannot economically store petabytes of historical data or support complex analytical joins.",
+    problems: "Enables long-term trend analysis, powers spam detection and recommendation models, and satisfies legal data retention requirements without impacting live systems."
+  },
+  {
+    id: "disaster-recovery", name: "Disaster Recovery", type: "infra", phase: 5,
+    short: "Automated backups, cross-region replication, and runbook orchestration for catastrophic failures.",
+    buildsOn: ["database", "object-storage", "global-lb"],
+    what: "Automated backups, cross-region replication, and runbook orchestration for catastrophic infrastructure failures.",
+    why: "Mission-critical messaging demands recovery objectives measured in minutes, not hours, with verified restore procedures.",
+    problems: "Guarantees business continuity during datacenter outages, minimizes Recovery Point Objective for message data, and automates failover without manual intervention."
+  },
+  {
+    id: "compliance", name: "Compliance & GDPR", type: "business", phase: 5,
+    short: "Data governance, right-to-erasure automation, audit trails, and regional data residency.",
+    buildsOn: ["user-service", "data-lake", "encryption"],
+    what: "Data governance, right-to-erasure automation, audit trails, and regional data residency enforcement.",
+    why: "Global regulations mandate strict data handling rules that must be enforced consistently across all distributed services.",
+    problems: "Ensures legal compliance with GDPR and regional laws, automates user data export and deletion requests, and maintains tamper-proof audit logs for regulators."
+  }
+];
+
+let currentPhase = 1;
+let selectedComponent = null;
+
+function init() {
+  renderPhaseSelector();
+  renderEvolutionTrack();
+  renderPhase(1);
+}
+
+function renderPhaseSelector() {
+  const container = document.getElementById('phaseSelector');
+  container.innerHTML = phases.map(p => `
+    <button class="phase-btn ${p.id === currentPhase ? 'active' : ''}" onclick="setPhase(${p.id})">
+      ${p.name}
+      <span class="users">${p.range}</span>
+    </button>
+  `).join('');
+}
+
+function renderEvolutionTrack() {
+  const container = document.getElementById('evolutionTrack');
+  container.innerHTML = phases.map(p => {
+    let cls = '';
+    if (p.id === currentPhase) cls = 'active';
+    else if (p.id < currentPhase) cls = 'completed';
+    return `<div class="evolution-step ${cls}">${p.id}</div>`;
+  }).join('');
+}
+
+function setPhase(id) {
+  currentPhase = id;
+  selectedComponent = null;
+  closeDetail();
+  renderPhaseSelector();
+  renderEvolutionTrack();
+  renderPhase(id);
+}
+
+function renderPhase(phaseId) {
+  const phase = phases.find(p => p.id === phaseId);
+  document.getElementById('phaseInfo').innerHTML = `
+    <h2>${phase.name}: ${phase.range} users</h2>
+    <p>${phase.desc}</p>
+  `;
+
+  // Previous components
+  const prevComps = components.filter(c => c.phase < phaseId);
+  const prevSection = document.getElementById('prevSection');
+  if (prevComps.length > 0) {
+    prevSection.innerHTML = `
+      <div class="section-title"><span class="dot" style="background: #64748b;"></span> Foundation from Previous Phases</div>
+      <div class="prev-grid">
+        ${prevComps.map(c => {
+          const tc = typeConfig[c.type];
+          return `<div class="prev-chip">
+            <span class="indicator" style="background: ${tc.color};"></span>
+            ${c.name}
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+  } else {
+    prevSection.innerHTML = '';
+  }
+
+  // Current phase components
+  const currentComps = components.filter(c => c.phase === phaseId);
+  const carousel = document.getElementById('carousel');
+  carousel.innerHTML = currentComps.map(c => {
+    const tc = typeConfig[c.type];
+    const isSelected = selectedComponent === c.id;
+    return `
+      <div class="component-card ${isSelected ? 'selected' : ''}" 
+           style="--card-color: ${tc.color};"
+           onclick="selectComponent('${c.id}')">
+        <div class="card-header">
+          <div class="card-title">${c.name}</div>
+          <div class="card-phase">${phase.name}</div>
+        </div>
+        <div class="type-badge ${tc.class}">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: ${tc.color}; display: inline-block;"></span>
+          ${tc.label}
+        </div>
+        <div class="card-desc">${c.short}</div>
+        <div class="card-meta">
+          ${c.buildsOn.length > 0 ? `<span class="meta-chip">Builds on: ${c.buildsOn.join(', ')}</span>` : '<span class="meta-chip">Foundation Layer</span>'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectComponent(id) {
+  selectedComponent = id;
+  const c = components.find(x => x.id === id);
+  const tc = typeConfig[c.type];
+  const phase = phases.find(p => p.id === c.phase);
+
+  // Update selection visual
+  document.querySelectorAll('.component-card').forEach(card => card.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+
+  const panel = document.getElementById('detailPanel');
+  document.getElementById('detailTitle').textContent = c.name;
+  document.getElementById('detailSubtitle').textContent = `${tc.label} · ${phase.name} · Builds on: ${c.buildsOn.length ? c.buildsOn.join(', ') : 'None (Foundation)'}`;
+  document.getElementById('detailBadges').innerHTML = `
+    <span class="type-badge ${tc.class}" style="font-size: 0.9rem; padding: 8px 16px;">
+      <span style="width: 10px; height: 10px; border-radius: 50%; background: ${tc.color}; display: inline-block; margin-right: 8px;"></span>
+      ${tc.label}
+    </span>
+  `;
+
+  document.getElementById('detailGrid').innerHTML = `
+    <div class="detail-box" style="--box-color: #3b82f6;">
+      <h3><span style="font-size: 1.2rem;">📋</span> What is it about?</h3>
+      <p>${c.what}</p>
+      <div class="word-count">${c.what.split(/\s+/).length} words</div>
+    </div>
+    <div class="detail-box" style="--box-color: #10b981;">
+      <h3><span style="font-size: 1.2rem;">🔍</span> Why separate?</h3>
+      <p>${c.why}</p>
+      <div class="word-count">${c.why.split(/\s+/).length} words</div>
+    </div>
+    <div class="detail-box" style="--box-color: #f59e0b;">
+      <h3><span style="font-size: 1.2rem;">🎯</span> Problems Solved</h3>
+      <p>${c.problems}</p>
+      <div class="word-count">${c.problems.split(/\s+/).length} words</div>
+    </div>
+  `;
+
+  panel.style.setProperty('--detail-color', tc.color);
+  panel.classList.add('active');
+
+  setTimeout(() => {
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 100);
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('active');
+  selectedComponent = null;
+  document.querySelectorAll('.component-card').forEach(card => card.classList.remove('selected'));
+}
+
+init();
+</script>
+
+</body>
+</html>
