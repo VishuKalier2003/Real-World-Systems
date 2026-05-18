@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PagerDuty Architecture Evolution</title>
+<style>
+  :root {
+    --pd-green: #06ac38;
+    --pd-dark: #1c293e;
+    --pd-light: #f4f5f7;
+    --pd-white: #ffffff;
+    --pd-gray: #8c8c8c;
+    --core: #06ac38;
+    --infra: #2563eb;
+    --business: #7c3aed;
+    --feature: #ea580c;
+    --analytics: #0891b2;
+    --compliance: #dc2626;
+    --monitoring: #4b5563;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--pd-light);
+    color: var(--pd-dark);
+    line-height: 1.6;
+  }
+  header {
+    background: var(--pd-dark);
+    color: var(--pd-white);
+    padding: 2rem;
+    text-align: center;
+    border-bottom: 4px solid var(--pd-green);
+  }
+  header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+  header p { color: #9ca3af; font-size: 0.95rem; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+  .phase-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .phase-tab {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: var(--pd-white);
+    color: var(--pd-dark);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+    border-left: 4px solid transparent;
+  }
+  .phase-tab:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  .phase-tab.active {
+    background: var(--pd-dark);
+    color: var(--pd-white);
+    border-left: 4px solid var(--pd-green);
+  }
+  .phase-content { display: none; }
+  .phase-content.active { display: block; animation: fadeIn 0.4s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  
+  .stats-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .stat-pill {
+    background: var(--pd-white);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+  }
+  .component-card {
+    background: var(--pd-white);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-top: 4px solid var(--core);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .component-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  }
+  .component-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 60px; height: 60px;
+    background: linear-gradient(135deg, transparent 50%, rgba(6,172,56,0.08) 50%);
+    border-bottom-left-radius: 60px;
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+  }
+  .card-title { font-size: 1.15rem; font-weight: 700; color: var(--pd-dark); }
+  .type-badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: white;
+  }
+  .type-core { background: var(--core); }
+  .type-infra { background: var(--infra); }
+  .type-business { background: var(--business); }
+  .type-feature { background: var(--feature); }
+  .type-analytics { background: var(--analytics); }
+  .type-compliance { background: var(--compliance); }
+  .type-monitoring { background: var(--monitoring); }
+  
+  .detail-row { margin-bottom: 0.75rem; }
+  .detail-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    color: var(--pd-gray);
+    margin-bottom: 0.25rem;
+  }
+  .detail-text { font-size: 0.9rem; color: #374151; }
+  
+  .evolution-note {
+    background: rgba(6,172,56,0.08);
+    border-left: 3px solid var(--pd-green);
+    padding: 0.75rem 1rem;
+    border-radius: 0 6px 6px 0;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: #065f2b;
+  }
+  
+  .timeline {
+    display: flex;
+    justify-content: space-between;
+    margin: 2rem 0;
+    position: relative;
+    padding: 0 1rem;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    top: 14px; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(to right, var(--pd-green), var(--pd-dark));
+    border-radius: 2px;
+  }
+  .t-point {
+    position: relative;
+    text-align: center;
+    z-index: 1;
+  }
+  .t-dot {
+    width: 32px; height: 32px;
+    background: var(--pd-white);
+    border: 3px solid var(--pd-green);
+    border-radius: 50%;
+    margin: 0 auto 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--pd-dark);
+  }
+  .t-label { font-size: 0.75rem; font-weight: 600; color: var(--pd-gray); }
+  
+  .footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--pd-gray);
+    font-size: 0.85rem;
+  }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<<header>
+  <h1>PagerDuty Architecture Evolution</h1>
+  <p>Microservices birth, growth, and scaling from 0 to 1,000,000 users</p>
+</header>
+
+<div class="container">
+
+<div class="timeline">
+  <div class="t-point"><div class="t-dot">I</div><div class="t-label">0-10</div></div>
+  <div class="t-point"><div class="t-dot">II</div><div class="t-label">10-100</div></div>
+  <div class="t-point"><div class="t-dot">III</div><div class="t-label">100-1K</div></div>
+  <div class="t-point"><div class="t-dot">IV</div><div class="t-label">1K-10K</div></div>
+  <div class="t-point"><div class="t-dot">V</div><div class="t-label">10K-100K</div></div>
+  <div class="t-point"><div class="t-dot">VI</div><div class="t-label">100K-1M</div></div>
+</div>
+
+<div class="phase-tabs">
+  <button class="phase-tab active" onclick="showPhase('phase1')">Phase I: 0–10 Users</button>
+  <button class="phase-tab" onclick="showPhase('phase2')">Phase II: 10–100 Users</button>
+  <button class="phase-tab" onclick="showPhase('phase3')">Phase III: 100–1K Users</button>
+  <button class="phase-tab" onclick="showPhase('phase4')">Phase IV: 1K–10K Users</button>
+  <button class="phase-tab" onclick="showPhase('phase5')">Phase V: 10K–100K Users</button>
+  <button class="phase-tab" onclick="showPhase('phase6')">Phase VI: 100K–1M Users</button>
+</div>
+
+<!-- PHASE I -->
+<div id="phase1" class="phase-content active">
+  <div class="stats-bar">
+    <div class="stat-pill">🎯 MVP Stage</div>
+    <div class="stat-pill">💰 Infra Budget: ~$500/mo</div>
+    <div class="stat-pill">📊 Incidents: ~10/day</div>
+    <div class="stat-pill">🔄 Availability Target: 99.5%</div>
+  </div>
+  <div class="cards-grid">
+    <div class="component-card" style="border-top-color: var(--infra);">
+      <div class="card-header">
+        <div class="card-title">API Gateway / Load Balancer</div>
+        <span class="type-badge type-infra">Infrastructure</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Single entry point routing HTTP requests to backend services with SSL termination.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Decouples client-facing contracts from service internals, enabling independent scaling later.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Prevents direct client-to-service coupling, handles TLS, provides first-line rate limiting and request routing for future microservices.</div></div>
+      <div class="evolution-note">Born in Phase I. Evolves from Nginx to Envoy/Istio by Phase IV.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--core);">
+      <div class="card-header">
+        <div class="card-title">User & Authentication Service</div>
+        <span class="type-badge type-core">Core</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Manages users, passwords, sessions/JWT, and basic role distinction (admin vs member).</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Identity is a cross-cutting concern; isolating it prevents auth logic from leaking into business code.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Centralizes security policy, enables SSO migration in Phase III, and ensures consistent session management across all future services.</div></div>
+      <div class="evolution-note">Born in Phase I. Grows into full IAM with RBAC, SAML, SCIM by Phase IV.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--core);">
+      <div class="card-header">
+        <div class="card-title">Incident Management Service</div>
+        <span class="type-badge type-core">Core</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">CRUD lifecycle for incidents: create, acknowledge, resolve, assign, and severity management.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">The heart of the domain; isolation protects incident state logic from notification or scheduling complexity.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Provides single source of truth for incident state, enables audit trails, and allows independent scaling of write-heavy incident ingestion.</div></div>
+      <div class="evolution-note">Born in Phase I. Shards by tenant ID in Phase V; adds event sourcing in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--core);">
+      <div class="card-header">
+        <div class="card-title">Notification Service (Email)</div>
+        <span class="type-badge type-core">Core</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Accepts notification requests and dispatches emails via SMTP or transactional email APIs.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Notification delivery is unreliable and slow; decoupling prevents email latency from blocking incident creation.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Isolates vendor-specific delivery logic, enables retry queues, and supports multi-channel expansion without touching incident logic.</div></div>
+      <div class="evolution-note">Born in Phase I. Adds SMS in Phase II, Voice/Push in Phase IV, and global routing in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--feature);">
+      <div class="card-header">
+        <div class="card-title">Web Dashboard (React/SPA)</div>
+        <span class="type-badge type-feature">Feature</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Single-page application for viewing incidents, acknowledging, and configuring basic settings.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Frontend release cycles differ from backend; separation enables independent UI iteration and CDN deployment.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Provides real-time visibility into system health, reduces MTTR through clear UX, and separates presentation from domain logic.</div></div>
+      <div class="evolution-note">Born in Phase I. Becomes Progressive Web App in Phase III; adds real-time WebSockets in Phase IV.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--infra);">
+      <div class="card-header">
+        <div class="card-title">PostgreSQL (Primary DB)</div>
+        <span class="type-badge type-infra">Infrastructure</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Relational database storing users, incidents, and notification logs with ACID guarantees.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Data persistence is infrastructure, not application logic; separation allows swapping storage tech without code changes.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Ensures durable incident records, supports complex relational queries for incidents-users-services, and provides transactional safety.</div></div>
+      <div class="evolution-note">Born in Phase I. Replicated read replicas in Phase III; sharded/Citus in Phase V; hybrid with CockroachDB in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--monitoring);">
+      <div class="card-header">
+        <div class="card-title">Basic Health Monitoring</div>
+        <span class="type-badge type-monitoring">Monitoring</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Simple uptime checks, log aggregation, and basic alerting if the platform itself fails.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">You cannot rely on the system to monitor itself without potential blind spots during outages.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Detects deployment failures, provides debugging telemetry, and establishes operational culture before complexity grows.</div></div>
+      <div class="evolution-note">Born in Phase I. Evolves into full Prometheus/Grafana/ELK stack by Phase III.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE II -->
+<div id="phase2" class="phase-content">
+  <div class="stats-bar">
+    <div class="stat-pill">🎯 Team Support</div>
+    <div class="stat-pill">💰 Infra Budget: ~$2K/mo</div>
+    <div class="stat-pill">📊 Incidents: ~100/day</div>
+    <div class="stat-pill">🔄 Availability Target: 99.9%</div>
+  </div>
+  <div class="cards-grid">
+    <div class="component-card" style="border-top-color: var(--core);">
+      <div class="card-header">
+        <div class="card-title">Team & RBAC Service</div>
+        <span class="type-badge type-core">Core</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Manages teams, user-team memberships, roles (viewer, responder, manager), and permissions.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Access control patterns change frequently; isolation prevents authorization logic from polluting incident or scheduling code.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Enables multi-team incident isolation, prevents unauthorized escalation, and supports hierarchical org structures for enterprise growth.</div></div>
+      <div class="evolution-note">Born in Phase II. Expands to SAML/SCIM provisioning in Phase IV; attribute-based access in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--business);">
+      <div class="card-header">
+        <div class="card-title">On-Call Scheduling Service</div>
+        <span class="type-badge type-business">Business</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Creates rotation schedules (weekly, custom), handles overrides, and computes who is currently on-call.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Scheduling is a complex temporal domain with its own rules; mixing it with incidents creates unmaintainable cron-like logic.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Eliminates manual on-call tracking, prevents alert fatigue through fair rotation, and ensures 24/7 coverage without human coordination.</div></div>
+      <div class="evolution-note">Born in Phase II. Adds calendar sync, ad-hoc overrides in Phase III; ML-based fatigue optimization in Phase V.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--business);">
+      <div class="card-header">
+        <div class="card-title">Escalation Policy Service</div>
+        <span class="type-badge type-business">Business</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Defines escalation chains: notify user A, wait 5 min, notify user B, then notify manager.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Escalation logic is stateful and time-dependent; isolating it prevents incident service from managing timers and retry state.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Guarantees alerts never go unanswered, reduces business downtime through automated handoffs, and encodes organizational response protocols.</div></div>
+      <div class="evolution-note">Born in Phase II. Adds dynamic escalation based on incident severity in Phase IV; cross-team escalation in Phase V.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--core);">
+      <div class="card-header">
+        <div class="card-title">SMS Gateway</div>
+        <span class="type-badge type-core">Core</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Extends Notification Service to dispatch SMS via Twilio or similar carriers with delivery tracking.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">SMS has unique carrier regulations, rate limits, and retry logic; a dedicated gateway abstracts telecom complexity.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Reaches engineers without internet access, provides higher urgency than email, and complies with regional telecom regulations.</div></div>
+      <div class="evolution-note">Born in Phase II. Becomes multi-vendor with fallback in Phase IV; adds short-code support in Phase V.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--analytics);">
+      <div class="card-header">
+        <div class="card-title">Basic Analytics</div>
+        <span class="type-badge type-analytics">Analytics</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Aggregates incident counts, MTTR, and responder load into simple dashboard charts.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Analytical queries are OLAP-heavy and would crush the transactional OLTP database if run directly.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Enables operational retrospectives, identifies over-burdened teams, and justifies staffing decisions with data rather than intuition.</div></div>
+      <div class="evolution-note">Born in Phase II. Evolves into full data warehouse pipeline in Phase V; real-time analytics in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--infra);">
+      <div class="card-header">
+        <div class="card-title">Redis Cache Layer</div>
+        <span class="type-badge type-infra">Infrastructure</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">In-memory store for session data, on-call lookups, and rate-limit counters.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Caching needs different scaling patterns and eviction policies than persistent database storage.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Reduces database load for hot data like "who is on-call now," enables sub-millisecond auth checks, and supports distributed locking.</div></div>
+      <div class="evolution-note">Born in Phase II. Becomes Redis Cluster in Phase III; multi-region replication in Phase V.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE III -->
+<div id="phase3" class="phase-content">
+  <div class="stats-bar">
+    <div class="stat-pill">🎯 Integration & Scale</div>
+    <div class="stat-pill">💰 Infra Budget: ~$15K/mo</div>
+    <div class="stat-pill">📊 Events: ~10K/day</div>
+    <div class="stat-pill">🔄 Availability Target: 99.95%</div>
+  </div>
+  <div class="cards-grid">
+    <div class="component-card" style="border-top-color: var(--core);">
+      <div class="card-header">
+        <div class="card-title">Event Ingestion / Integration Service</div>
+        <span class="type-badge type-core">Core</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Accepts webhooks and API calls from Datadog, New Relic, CloudWatch, and custom monitoring tools.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Integration adapters are numerous, volatile, and vendor-specific; isolating them prevents core instability.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Standardizes disparate alert formats, buffers traffic spikes from upstream monitors, and enables custom integration marketplace later.</div></div>
+      <div class="evolution-note">Born in Phase III. Adds outbound webhooks and bi-directional sync in Phase IV; plugin SDK in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--feature);">
+      <div class="card-header">
+        <div class="card-title">Event Intelligence (Dedup)</div>
+        <span class="type-badge type-feature">Feature</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Groups related alerts into single incidents using rule-based grouping on hostname, service, or custom tags.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Noise reduction is a specialized algorithmic domain; keeping it separate allows ML replacement without touching incident logic.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Prevents alert storms during outages, reduces responder fatigue, and correlates symptoms to root cause across multiple monitoring sources.</div></div>
+      <div class="evolution-note">Born in Phase III. Rule-based → ML correlation in Phase V; predictive suppression in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--infra);">
+      <div class="card-header">
+        <div class="card-title">Search & Indexing Service</div>
+        <span class="type-badge type-infra">Infrastructure</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Elasticsearch/OpenSearch index for full-text search across incidents, logs, and post-mortems.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Search indexing is write-heavy with inverted indices; it must not contend with transactional incident writes.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Enables fast incident retrospectives, knowledge discovery from past outages, and compliance evidence retrieval in seconds.</div></div>
+      <div class="evolution-note">Born in Phase III. Scales to federated search across logs and metrics in Phase V.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--compliance);">
+      <div class="card-header">
+        <div class="card-title">Audit Logging Service</div>
+        <span class="type-badge type-compliance">Compliance</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Immutable append-only logs of every API call, incident action, and configuration change with timestamps.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Audit requirements are legal/compliance-driven with different retention and immutability rules than operational logs.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Satisfies SOC2/ISO27001 evidence requirements, enables forensic investigation of security incidents, and prevents tampering.</div></div>
+      <div class="evolution-note">Born in Phase III. Becomes blockchain-anchored tamper-proof logs in Phase V; cross-region compliance in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--infra);">
+      <div class="card-header">
+        <div class="card-title">Message Queue (Kafka/RabbitMQ)</div>
+        <span class="type-badge type-infra">Infrastructure</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Durable async pipeline connecting Event Ingestion → Incident Service → Notification Service.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Async middleware is infrastructure with its own operational concerns (partitions, retention, consumer lag).</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Absorbs traffic spikes, enables backpressure handling, guarantees at-least-once delivery, and decouples service availability.</div></div>
+      <div class="evolution-note">Born in Phase III. Kafka cluster with exactly-once semantics in Phase V; global mirrored topics in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--infra);">
+      <div class="card-header">
+        <div class="card-title">Object Storage (S3)</div>
+        <span class="type-badge type-infra">Infrastructure</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Stores large payloads: alert attachments, incident images, exported reports, and log archives.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Blob storage has different cost, durability, and access patterns than structured database rows.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Offloads binary data from expensive DB storage, provides infinite retention for compliance, and enables CDN distribution.</div></div>
+      <div class="evolution-note">Born in Phase III. Tiered storage and lifecycle policies in Phase V; multi-region replication in Phase VI.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE IV -->
+<div id="phase4" class="phase-content">
+  <div class="stats-bar">
+    <div class="stat-pill">🎯 Enterprise Ready</div>
+    <div class="stat-pill">💰 Infra Budget: ~$100K/mo</div>
+    <div class="stat-pill">📊 Events: ~1M/day</div>
+    <div class="stat-pill">🔄 Availability Target: 99.99%</div>
+  </div>
+  <div class="cards-grid">
+    <div class="component-card" style="border-top-color: var(--feature);">
+      <div class="card-header">
+        <div class="card-title">Voice & Phone Bridge</div>
+        <span class="type-badge type-feature">Feature</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Automated phone calls with text-to-speech alerts and conference bridge hosting for war rooms.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Telephony requires PSTN integration, SIP trunking, and carrier contracts that differ entirely from digital channels.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Breaks through notification apathy with highest-urgency channel, enables voice-only environments, and supports regulatory callbacks.</div></div>
+      <div class="evolution-note">Born in Phase IV. Adds AI voice transcription in Phase V; global local dial-in numbers in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--feature);">
+      <div class="card-header">
+        <div class="card-title">ChatOps Service</div>
+        <span class="type-badge type-feature">Feature</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Bi-directional Slack, Teams, Discord integration: alerts into channels, commands to acknowledge/resolve from chat.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Chat platforms have unique rate limits, OAuth flows, and UI surfaces; isolation prevents chat vendor churn from destabilizing core.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Meets engineers in their workflow, creates persistent incident war rooms, and enables bot-driven automation and runbooks.</div></div>
+      <div class="evolution-note">Born in Phase IV. Workflow automation triggers in Phase V; custom bot marketplace in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--feature);">
+      <div class="card-header">
+        <div class="card-title">Mobile Push Gateway</div>
+        <span class="type-badge type-feature">Feature</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">APNs (Apple) and FCM (Android) gateway for native push notifications with rich actions.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Mobile push has platform-specific certificate management, token rotation, and delivery semantics.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Enables on-the-go incident response, supports offline-first mobile UX, and provides highest-priority interruption for critical alerts.</div></div>
+      <div class="evolution-note">Born in Phase IV. Adds geofenced routing in Phase V; wearable integration in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--analytics);">
+      <div class="card-header">
+        <div class="card-title">Advanced Analytics & Reporting</div>
+        <span class="type-badge type-analytics">Analytics</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Custom dashboards, SLA tracking, responder workload analytics, and executive summary reports.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Complex aggregations and time-series analysis require columnar storage and specialized query engines.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Drives operational excellence through metrics, enables customer-facing SLA proofs, and identifies systemic reliability weaknesses.</div></div>
+      <div class="evolution-note">Born in Phase IV. Real-time streaming analytics in Phase V; predictive SLA breach warnings in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--feature);">
+      <div class="card-header">
+        <div class="card-title">Workflow Automation</div>
+        <span class="type-badge type-feature">Feature</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Runbook automation: auto-restart services, scale infrastructure, or create tickets based on incident triggers.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Automation executes arbitrary customer code; strong sandboxing and isolation are mandatory for security.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Reduces MTTR via self-healing, eliminates repetitive manual remediation, and enforces consistent response procedures at scale.</div></div>
+      <div class="evolution-note">Born in Phase IV. Adds conditional logic and approvals in Phase V; cross-system orchestration in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--infra);">
+      <div class="card-header">
+        <div class="card-title">Multi-Region Failover</div>
+        <span class="type-badge type-infra">Infrastructure</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Active-passive or active-active deployment across AWS/Azure/GCP regions with DNS failover.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Disaster recovery is a cross-cutting infrastructure concern, not a business logic feature.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Survives regional cloud outages, meets enterprise DR requirements, and reduces latency for global users through geo-routing.</div></div>
+      <div class="evolution-note">Born in Phase IV. Active-active with CRDTs in Phase VI.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE V -->
+<div id="phase5" class="phase-content">
+  <div class="stats-bar">
+    <div class="stat-pill">🎯 Intelligence & Scale</div>
+    <div class="stat-pill">💰 Infra Budget: ~$500K/mo</div>
+    <div class="stat-pill">📊 Events: ~50M/day</div>
+    <div class="stat-pill">🔄 Availability Target: 99.999%</div>
+  </div>
+  <div class="cards-grid">
+    <div class="component-card" style="border-top-color: var(--feature);">
+      <div class="card-header">
+        <div class="card-title">AI/ML Anomaly Detection</div>
+        <span class="type-badge type-feature">Feature</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">ML models detecting pattern anomalies in event streams to predict incidents before they trigger customer alerts.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">ML pipelines have unique training, inference, GPU, and data labeling needs separate from transactional paths.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Shifts posture from reactive to predictive, reduces false positives through learned baselines, and surfaces hidden correlations.</div></div>
+      <div class="evolution-note">Born in Phase V. Federated learning across tenants in Phase VI; autonomous remediation suggestions.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--feature);">
+      <div class="card-header">
+        <div class="card-title">Advanced Event Correlation</div>
+        <span class="type-badge type-feature">Feature</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Graph-based correlation engine linking incidents to infrastructure topology, deployments, and past incidents.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Graph algorithms and temporal reasoning are compute-intensive and require specialized stores (Neo4j/graph DBs).</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Identifies root cause faster by surfacing "incidents like this before," correlates deployment-induced failures, and reduces noise.</div></div>
+      <div class="evolution-note">Born in Phase V. Real-time topology-aware correlation in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--business);">
+      <div class="card-header">
+        <div class="card-title">Billing & Usage Service</div>
+        <span class="type-badge type-business">Business</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Metering API calls, incidents, notifications, and users; generates invoices and handles plan upgrades.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Billing accuracy and auditability require strict separation from operational data to prevent revenue leakage.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Enables usage-based pricing, prevents billing disputes through immutable metering, and supports enterprise contract negotiation.</div></div>
+      <div class="evolution-note">Born in Phase V. Real-time usage dashboards for customers in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--analytics);">
+      <div class="card-header">
+        <div class="card-title">Data Pipeline / Warehouse</div>
+        <span class="type-badge type-analytics">Analytics</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">ETL pipeline from operational DBs to Snowflake/BigQuery for historical analysis and BI.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">ETL is batch-oriented and fault-tolerant; it must not interfere with millisecond-latency operational paths.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Powers long-term trend analysis, feeds ML training sets, and provides compliance archives without impacting production.</div></div>
+      <div class="evolution-note">Born in Phase V. Streaming ETL with exactly-once in Phase VI.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--compliance);">
+      <div class="card-header">
+        <div class="card-title">Advanced Compliance</div>
+        <span class="type-badge type-compliance">Compliance</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">GDPR data deletion, HIPAA audit controls, SOC2 evidence collection, and encryption key management.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Compliance logic is jurisdiction-specific and changes with regulations; mixing it into core services creates legal risk.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Enables global enterprise sales, automates Right-to-be-Forgotten, and maintains cryptographic evidence for legal discovery.</div></div>
+      <div class="evolution-note">Born in Phase V. Automated compliance posture scoring in Phase VI.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PHASE VI -->
+<div id="phase6" class="phase-content">
+  <div class="stats-bar">
+    <div class="stat-pill">🎯 Global Platform</div>
+    <div class="stat-pill">💰 Infra Budget: ~$2M+/mo</div>
+    <div class="stat-pill">📊 Events: ~1B/day</div>
+    <div class="stat-pill">🔄 Availability Target: 99.9999%</div>
+  </div>
+  <div class="cards-grid">
+    <div class="component-card" style="border-top-color: var(--infra);">
+      <div class="card-header">
+        <div class="card-title">Global Edge / CDN Network</div>
+        <span class="type-badge type-infra">Infrastructure</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Planet-scale edge PoPs caching static assets, TLS termination, and DDoS mitigation close to users.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Edge networking is a specialized infrastructure layer with BGP, anycast, and caching semantics.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Sub-50ms latency globally, absorbs volumetric attacks, and reduces origin load by 80%+ through edge caching.</div></div>
+      <div class="evolution-note">Born in Phase VI. Custom edge compute for alert filtering.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--feature);">
+      <div class="card-header">
+        <div class="card-title">Predictive Incident Platform</div>
+        <span class="type-badge type-feature">Feature</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Pre-emptive incident creation based on predicted failure modes before monitoring tools even fire.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Predictive systems are probabilistic and experimental; they must not contaminate deterministic incident state.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Moves SRE from reactive to preventive, prevents customer-facing outages through proactive remediation, and optimizes maintenance windows.</div></div>
+      <div class="evolution-note">Born in Phase VI. Autonomous closed-loop remediation.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--feature);">
+      <div class="card-header">
+        <div class="card-title">Plugin Marketplace</div>
+        <span class="type-badge type-feature">Feature</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Third-party developer platform for custom integrations, widgets, and automation actions hosted in sandboxed environment.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Untrusted third-party code requires maximum isolation to prevent data exfiltration or resource monopolization.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Scales integration ecosystem exponentially without engineering bottleneck, creates partner revenue, and customizes enterprise workflows.</div></div>
+      <div class="evolution-note">Born in Phase VI. WebAssembly sandboxing for near-native performance.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--infra);">
+      <div class="card-header">
+        <div class="card-title">Tenant Isolation Service</div>
+        <span class="type-badge type-infra">Infrastructure</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Hard multi-tenancy controls: resource quotas, noisy-neighbor isolation, and data sovereignty routing.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Tenant isolation is a cross-cutting policy engine that must enforce guarantees without each service implementing checks.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Prevents large tenants from starving small ones, enables data residency (EU/US/Asia), and supports FedRAMP isolation.</div></div>
+      <div class="evolution-note">Born in Phase VI. Cell-based architecture for blast-radius containment.</div>
+    </div>
+
+    <div class="component-card" style="border-top-color: var(--infra);">
+      <div class="card-header">
+        <div class="card-title">Advanced Global Caching</div>
+        <span class="type-badge type-infra">Infrastructure</span>
+      </div>
+      <div class="detail-row"><div class="detail-label">What</div><div class="detail-text">Geo-distributed cache with cache-coherence protocols for on-call schedules and user sessions.</div></div>
+      <div class="detail-row"><div class="detail-label">Why Separate</div><div class="detail-text">Global cache consistency is a hard distributed systems problem requiring its own consensus and conflict resolution.</div></div>
+      <div class="detail-row"><div class="detail-label">Problems Solved</div><div class="detail-text">Guarantees consistent on-call lookups across regions, eliminates cross-region DB round-trips, and survives partition events.</div></div>
+      <div class="evolution-note">Born in Phase VI. CRDT-based schedule merging.</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>PagerDuty Architecture Evolution • Built for System Design Mastery</p>
+</div>
+
+</div>
+
+<script>
+function showPhase(id) {
+  document.querySelectorAll('.phase-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.phase-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
