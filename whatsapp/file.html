@@ -3,1673 +3,950 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp System Design - Evolution Across Phases</title>
+    <title>WhatsApp Architecture Evolution | Phase I - VI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --wa-green: #25D366;
             --wa-dark-green: #128C7E;
-            --wa-teal: #075E54;
-            --wa-light-green: #DCF8C6;
-            --wa-bg: #E5DDD5;
-            --wa-chat-bg: #F0F2F5;
+            --wa-darker-green: #075E54;
+            --wa-teal: #34B7F1;
+            --wa-bg: #F0F2F5;
             --wa-white: #FFFFFF;
-            --wa-gray: #54656F;
-            --wa-light-gray: #F5F6F6;
-            --type-core: #FF6B6B;
-            --type-platform: #4ECDC4;
-            --type-data: #45B7D1;
-            --type-ops: #96CEB4;
-            --type-edge: #FFEAA7;
-            --type-business: #DDA0DD;
+            --wa-text: #111B21;
+            --wa-text-secondary: #667781;
+            --wa-card-bg: #FFFFFF;
+            --wa-border: #E9EDEF;
+            --wa-core: #25D366;
+            --wa-platform: #34B7F1;
+            --wa-data: #FF6B6B;
+            --wa-operations: #FFD93D;
+            --wa-edge: #6C5CE7;
+            --wa-business: #FD79A8;
+            --wa-ai: #00B894;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--wa-teal) 0%, var(--wa-dark-green) 100%);
+            background: linear-gradient(135deg, var(--wa-bg) 0%, #e8f5e9 100%);
+            color: var(--wa-text);
             min-height: 100vh;
-            color: var(--wa-gray);
+            overflow-x: hidden;
         }
 
         .header {
-            text-align: center;
-            padding: 40px 20px 20px;
+            background: linear-gradient(135deg, var(--wa-darker-green) 0%, var(--wa-dark-green) 100%);
             color: white;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(7, 94, 84, 0.3);
+            position: relative;
+            overflow: hidden;
         }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.3;
+        }
+
         .header h1 {
-            font-size: 2.8rem;
+            font-size: 2.5rem;
             font-weight: 800;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
         }
+
         .header p {
             font-size: 1.1rem;
             opacity: 0.9;
-            max-width: 700px;
+            max-width: 600px;
             margin: 0 auto;
-            line-height: 1.6;
+            position: relative;
+            z-index: 1;
         }
 
-        /* Phase Tabs */
-        .phase-tabs {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            padding: 20px;
-            flex-wrap: wrap;
-        }
-        .phase-tab {
-            background: rgba(255,255,255,0.15);
-            border: 2px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-        .phase-tab:hover {
-            background: rgba(255,255,255,0.25);
-            transform: translateY(-2px);
-        }
-        .phase-tab.active {
-            background: var(--wa-green);
-            border-color: var(--wa-green);
-            box-shadow: 0 4px 20px rgba(37,211,102,0.4);
-        }
-        .phase-tab .users {
-            font-size: 0.75rem;
-            opacity: 0.8;
-            display: block;
-            margin-top: 2px;
-        }
-
-        /* Main Container */
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 2rem;
         }
 
-        .phase-section {
-            display: none;
-            animation: fadeIn 0.5s ease;
-        }
-        .phase-section.active {
-            display: block;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .phase-header {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            border-left: 6px solid var(--wa-green);
-        }
-        .phase-header h2 {
-            color: var(--wa-teal);
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-        }
-        .phase-header .goal {
-            color: var(--wa-gray);
-            font-size: 1rem;
-            line-height: 1.6;
-        }
-        .phase-header .new-components {
-            margin-top: 15px;
+        .phase-nav {
             display: flex;
-            gap: 8px;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
             flex-wrap: wrap;
         }
-        .badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
+
+        .phase-btn {
+            background: white;
+            border: 2px solid var(--wa-border);
+            padding: 1rem 1.5rem;
+            border-radius: 16px;
+            cursor: pointer;
             font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            min-width: 140px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .phase-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(37, 211, 102, 0.15);
+            border-color: var(--wa-green);
+        }
+
+        .phase-btn.active {
+            background: linear-gradient(135deg, var(--wa-dark-green), var(--wa-green));
             color: white;
+            border-color: var(--wa-dark-green);
+            box-shadow: 0 8px 24px rgba(37, 211, 102, 0.3);
         }
 
-        /* Carousel Grid */
-        .carousel-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
+        .phase-btn .phase-label {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        /* Component Card */
-        .component-card {
+        .phase-btn .phase-range {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .phase-info {
             background: white;
             border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            border-left: 5px solid var(--wa-green);
         }
+
+        .phase-info h2 {
+            color: var(--wa-darker-green);
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .phase-info p {
+            color: var(--wa-text-secondary);
+            line-height: 1.6;
+        }
+
+        .carousel-container {
+            position: relative;
+            overflow: hidden;
+            padding: 1rem 0;
+        }
+
+        .carousel-track {
+            display: flex;
+            gap: 1.5rem;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 1rem 0.5rem;
+        }
+
+        .component-card {
+            min-width: 380px;
+            max-width: 380px;
+            background: var(--wa-card-bg);
+            border-radius: 24px;
+            padding: 1.75rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            border: 1px solid var(--wa-border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
         .component-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            box-shadow: 0 20px 40px rgba(37, 211, 102, 0.12);
+            border-color: var(--wa-green);
         }
+
         .component-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
+            width: 100%;
             height: 4px;
-            background: var(--wa-green);
+            background: var(--card-accent);
         }
-        .component-card.core::before { background: var(--type-core); }
-        .component-card.platform::before { background: var(--type-platform); }
-        .component-card.data::before { background: var(--type-data); }
-        .component-card.operations::before { background: var(--type-ops); }
-        .component-card.edge::before { background: var(--type-edge); }
-        .component-card.business::before { background: var(--type-business); }
 
         .card-header {
-            padding: 20px 20px 10px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            margin-bottom: 1rem;
         }
-        .card-title {
-            font-size: 1.15rem;
+
+        .component-name {
+            font-size: 1.25rem;
             font-weight: 700;
-            color: var(--wa-teal);
+            color: var(--wa-text);
             line-height: 1.3;
+            flex: 1;
         }
-        .type-badge {
-            padding: 4px 10px;
-            border-radius: 12px;
+
+        .badges {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            align-items: flex-end;
+        }
+
+        .badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
             font-size: 0.7rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .type-badge.core { background: #FFE5E5; color: var(--type-core); }
-        .type-badge.platform { background: #E5F9F7; color: var(--type-platform); }
-        .type-badge.data { background: #E5F4F9; color: var(--type-data); }
-        .type-badge.operations { background: #E8F5E9; color: #2E7D32; }
-        .type-badge.edge { background: #FFF8E5; color: #F57F17; }
-        .type-badge.business { background: #F3E5F5; color: #7B1FA2; }
+
+        .badge-type {
+            background: var(--badge-bg);
+            color: var(--badge-color);
+        }
+
+        .badge-new {
+            background: linear-gradient(135deg, var(--wa-green), var(--wa-dark-green));
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .badge-scaled {
+            background: linear-gradient(135deg, var(--wa-teal), #0099cc);
+            color: white;
+        }
+
+        .badge-core {
+            background: rgba(37, 211, 102, 0.15);
+            color: var(--wa-darker-green);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
 
         .card-body {
-            padding: 0 20px 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
-        .detail-row {
-            margin-bottom: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #f0f0f0;
+
+        .detail-section {
+            background: var(--wa-bg);
+            border-radius: 12px;
+            padding: 1rem;
+            border-left: 3px solid var(--card-accent);
         }
-        .detail-row:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
+
         .detail-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
-            color: var(--wa-gray);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
+            letter-spacing: 1px;
+            color: var(--card-accent);
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
         }
+
         .detail-text {
             font-size: 0.88rem;
-            color: #333;
             line-height: 1.5;
+            color: var(--wa-text);
+        }
+
+        .word-count {
+            font-size: 0.65rem;
+            color: var(--wa-text-secondary);
+            margin-left: auto;
+            font-weight: 500;
         }
 
         .card-footer {
-            background: var(--wa-light-gray);
-            padding: 12px 20px;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--wa-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .phase-indicator {
             font-size: 0.8rem;
-            color: var(--wa-gray);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--wa-green);
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            color: var(--wa-text-secondary);
+            font-weight: 500;
         }
 
-        /* Evolution Section */
-        .evolution-section {
+        .icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--card-accent-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .nav-btn {
             background: white;
-            border-radius: 20px;
-            padding: 30px;
-            margin-top: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        }
-        .evolution-section h3 {
-            color: var(--wa-teal);
-            font-size: 1.4rem;
-            margin-bottom: 20px;
+            border: 2px solid var(--wa-border);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-        .evolution-timeline {
-            position: relative;
-            padding-left: 30px;
-        }
-        .evolution-timeline::before {
-            content: '';
-            position: absolute;
-            left: 8px;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: linear-gradient(to bottom, var(--wa-green), var(--wa-teal));
-            border-radius: 3px;
-        }
-        .evo-item {
-            position: relative;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: var(--wa-light-gray);
-            border-radius: 12px;
-            margin-left: 15px;
-        }
-        .evo-item::before {
-            content: '';
-            position: absolute;
-            left: -36px;
-            top: 20px;
-            width: 14px;
-            height: 14px;
-            background: var(--wa-green);
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 0 0 3px var(--wa-green);
-        }
-        .evo-phase {
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            color: var(--wa-dark-green);
             font-weight: 700;
-            color: var(--wa-teal);
-            font-size: 0.9rem;
-            margin-bottom: 5px;
-        }
-        .evo-desc {
-            font-size: 0.85rem;
-            color: var(--wa-gray);
-            line-height: 1.5;
         }
 
-        /* Legend */
+        .nav-btn:hover {
+            background: var(--wa-green);
+            color: white;
+            border-color: var(--wa-green);
+            transform: scale(1.1);
+        }
+
         .legend {
             display: flex;
             justify-content: center;
-            gap: 20px;
-            padding: 20px;
+            gap: 1.5rem;
+            margin: 2rem 0;
             flex-wrap: wrap;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
+            background: white;
+            padding: 1rem 2rem;
             border-radius: 16px;
-            margin: 20px auto;
-            max-width: 900px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
+
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: white;
+            gap: 0.5rem;
             font-size: 0.85rem;
             font-weight: 500;
         }
+
         .legend-dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 4px;
-        }
-
-        /* Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .modal-overlay.active {
-            display: flex;
-        }
-        .modal-content {
-            background: white;
-            border-radius: 24px;
-            max-width: 600px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 40px;
-            position: relative;
-            animation: modalIn 0.3s ease;
-        }
-        @keyframes modalIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .modal-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 36px;
-            height: 36px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            background: var(--wa-light-gray);
-            border: none;
-            cursor: pointer;
-            font-size: 1.2rem;
-            color: var(--wa-gray);
-            transition: all 0.2s;
-        }
-        .modal-close:hover {
-            background: #e0e0e0;
-            transform: rotate(90deg);
-        }
-        .modal-title {
-            font-size: 1.6rem;
-            color: var(--wa-teal);
-            margin-bottom: 5px;
-        }
-        .modal-subtitle {
-            color: var(--wa-gray);
-            font-size: 0.9rem;
-            margin-bottom: 25px;
-        }
-        .modal-section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: var(--wa-light-gray);
-            border-radius: 12px;
-        }
-        .modal-section h4 {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--wa-dark-green);
-            margin-bottom: 8px;
-        }
-        .modal-section p {
-            font-size: 0.95rem;
-            line-height: 1.6;
-            color: #333;
         }
 
-        /* Framework Section */
-        .framework-section {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            margin-top: 40px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        }
-        .framework-section h2 {
-            color: var(--wa-teal);
-            font-size: 1.8rem;
-            margin-bottom: 20px;
-        }
-        .framework-grid {
+        .stats-bar {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
-        .framework-card {
-            border: 2px solid #e0e0e0;
+
+        .stat-card {
+            background: white;
+            padding: 1.25rem;
             border-radius: 16px;
-            padding: 24px;
-            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            text-align: center;
+            border-top: 3px solid var(--wa-green);
         }
-        .framework-card:hover {
-            border-color: var(--wa-green);
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(37,211,102,0.1);
+
+        .stat-number {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--wa-darker-green);
         }
-        .framework-card h4 {
-            color: var(--wa-teal);
-            font-size: 1.1rem;
-            margin-bottom: 10px;
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--wa-text-secondary);
+            margin-top: 0.25rem;
+            font-weight: 500;
         }
-        .framework-card p {
-            font-size: 0.88rem;
-            color: var(--wa-gray);
-            line-height: 1.6;
-        }
-        .framework-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            background: var(--wa-green);
-            color: white;
-            border-radius: 50%;
-            font-weight: 700;
-            font-size: 0.9rem;
-            margin-bottom: 12px;
+
+        .timeline-connector {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 20px;
+            background: var(--wa-border);
         }
 
         @media (max-width: 768px) {
-            .header h1 { font-size: 2rem; }
-            .carousel-grid { grid-template-columns: 1fr; }
-            .phase-tab { padding: 10px 16px; font-size: 0.8rem; }
-            .modal-content { padding: 24px; }
+            .component-card {
+                min-width: 300px;
+                max-width: 300px;
+            }
+            .header h1 {
+                font-size: 1.75rem;
+            }
+            .phase-btn {
+                min-width: 100px;
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        .scroll-indicator {
+            text-align: center;
+            color: var(--wa-text-secondary);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .intro-section {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        }
+
+        .intro-section h3 {
+            color: var(--wa-darker-green);
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        .intro-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .intro-section li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--wa-text-secondary);
+            line-height: 1.6;
+        }
+
+        .intro-section li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--wa-green);
+            font-weight: 700;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>📱 WhatsApp System Design</h1>
-        <p>Evolution of microservices from 0 to 10M+ users. Click any component to explore details. Use the framework below to design any phase-component combination.</p>
-    </div>
-
-    <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background: var(--type-core)"></div>Core Service</div>
-        <div class="legend-item"><div class="legend-dot" style="background: var(--type-platform)"></div>Platform</div>
-        <div class="legend-item"><div class="legend-dot" style="background: var(--type-data)"></div>Data Layer</div>
-        <div class="legend-item"><div class="legend-dot" style="background: var(--type-ops)"></div>Operations</div>
-        <div class="legend-item"><div class="legend-dot" style="background: var(--type-edge)"></div>Edge/Infrastructure</div>
-        <div class="legend-item"><div class="legend-dot" style="background: var(--type-business)"></div>Business</div>
-    </div>
-
-    <div class="phase-tabs">
-        <div class="phase-tab active" onclick="showPhase(0)">
-            Phase I
-            <span class="users">0 → 1K users</span>
-        </div>
-        <div class="phase-tab" onclick="showPhase(1)">
-            Phase II
-            <span class="users">1K → 10K users</span>
-        </div>
-        <div class="phase-tab" onclick="showPhase(2)">
-            Phase III
-            <span class="users">10K → 100K users</span>
-        </div>
-        <div class="phase-tab" onclick="showPhase(3)">
-            Phase IV
-            <span class="users">100K → 1M users</span>
-        </div>
-        <div class="phase-tab" onclick="showPhase(4)">
-            Phase V
-            <span class="users">1M → 10M users</span>
-        </div>
-        <div class="phase-tab" onclick="showPhase(5)">
-            Phase VI
-            <span class="users">10M+ users</span>
-        </div>
+        <h1>📱 WhatsApp Architecture Evolution</h1>
+        <p>Microservices scaling journey from 0 to 10M+ users across 6 phases. Interactive component carousel with design rationale.</p>
     </div>
 
     <div class="container">
-        <!-- Phase I -->
-        <div class="phase-section active" id="phase-0">
-            <div class="phase-header">
-                <h2>🚀 Phase I: MVP & Foundation (0 → 1,000 users)</h2>
-                <p class="goal"><strong>Goal:</strong> Build a functional messaging app with real-time delivery, user authentication, media sharing, and push notifications. Focus is on speed-to-market, simplicity, and core loop validation.</p>
-                <div class="new-components">
-                    <span class="badge" style="background: var(--type-core)">8 Core Services</span>
-                    <span class="badge" style="background: var(--type-data)">2 Data Stores</span>
-                    <span class="badge" style="background: var(--type-edge)">1 Edge</span>
-                </div>
-            </div>
-            <div class="carousel-grid">
-                <div class="component-card edge" onclick="openModal('API Gateway', 'edge', 'Phase I', 'Entry point for all client requests. Handles SSL termination, routing, rate limiting basics, and API versioning. Acts as a reverse proxy to internal microservices.', 'Separation prevents direct client-to-service coupling, enables centralized security, and allows independent scaling of backend services without client changes.', 'Solves the single-entry security problem, prevents direct database exposure, enables load distribution, and provides a unified interface for mobile/web/desktop clients.')">
-                    <div class="card-header">
-                        <div class="card-title">API Gateway</div>
-                        <span class="type-badge edge">Edge</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Entry point handling SSL, routing, auth validation, and request forwarding to internal services.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Prevents direct client-service coupling and enables centralized security policies.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Eliminates direct DB exposure, provides unified API interface, enables backend scaling without client updates, and centralizes SSL termination.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase I · Baseline</div>
-                </div>
-
-                <div class="component-card core" onclick="openModal('User Service', 'core', 'Phase I', 'Manages user lifecycle including registration via phone OTP, profile management, contact syncing, privacy settings, and authentication token issuance.', 'User data has different consistency needs and access patterns than messages. Separating it allows independent scaling during signup spikes and targeted security hardening.', 'Solves identity management, prevents unauthorized access, handles phone-number-to-user mapping, manages privacy settings, and enables account recovery flows.')">
-                    <div class="card-header">
-                        <div class="card-title">User Service</div>
-                        <span class="type-badge core">Core</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Handles registration, OTP verification, profiles, auth tokens, and privacy settings.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Different scaling needs during signup spikes and requires stronger security isolation.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Manages identity lifecycle, prevents unauthorized access, handles phone verification, enables profile discovery, and secures personal data independently.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase I · Baseline</div>
-                </div>
-
-                <div class="component-card core" onclick="openModal('Chat Service', 'core', 'Phase I', 'Core messaging engine handling 1:1 text message creation, delivery status tracking, message ordering, and conversation thread management with sequential ID generation.', 'Message traffic dwarfs user metadata traffic. Isolating chat logic prevents user service overload, allows message-specific optimizations like write-behind caching and specialized storage.', 'Solves reliable message delivery, maintains conversation ordering, prevents message loss during network issues, and enables delivery receipts and read status tracking.')">
-                    <div class="card-header">
-                        <div class="card-title">Chat Service</div>
-                        <span class="type-badge core">Core</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">1:1 messaging engine with delivery tracking, ordering, and conversation management.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Message traffic patterns differ from user data, needing specialized storage and scaling.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Ensures reliable delivery, maintains strict message ordering, prevents data loss during outages, and enables real-time status updates for users.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase I · Baseline</div>
-                </div>
-
-                <div class="component-card core" onclick="openModal('WebSocket Manager', 'core', 'Phase I', 'Maintains persistent bidirectional connections with clients for real-time message push, typing indicators, and presence updates using stateful connection pools.', 'HTTP request-response model cannot push data. WebSockets need long-lived stateful connections requiring different server resources (memory vs CPU) and connection-specific load balancing.', 'Solves real-time bidirectional communication, eliminates polling overhead, enables instant message delivery, and supports typing indicators and online status propagation.')">
-                    <div class="card-header">
-                        <div class="card-title">WebSocket Manager</div>
-                        <span class="type-badge core">Core</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Maintains persistent client connections for real-time push, typing, and presence.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Stateful connections need memory-optimized servers and sticky load balancing unlike HTTP.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables instant push without polling, reduces battery drain on mobile devices, supports real-time collaboration features, and handles millions of concurrent sockets.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase I · Baseline</div>
-                </div>
-
-                <div class="component-card core" onclick="openModal('Media Service', 'core', 'Phase I', 'Handles image, video, and document uploads with basic validation, format checking, and storage orchestration. Generates simple thumbnails for images.', 'Media files are large binary objects with different storage, bandwidth, and processing needs than text. Separating prevents chat service memory bloat and allows CDN integration later.', 'Solves large file handling without blocking text messages, enables format validation, prevents storage abuse, and prepares architecture for future CDN and compression pipelines.')">
-                    <div class="card-header">
-                        <div class="card-title">Media Service</div>
-                        <span class="type-badge core">Core</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Upload handling, validation, thumbnail generation, and storage orchestration for files.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Binary data has different storage and bandwidth needs than text messages.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Prevents large uploads from blocking chat, enables file validation, manages storage costs, and allows independent scaling of media infrastructure later.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase I · Baseline</div>
-                </div>
-
-                <div class="component-card data" onclick="openModal('Primary Database', 'data', 'Phase I', 'PostgreSQL or MySQL storing users, messages, conversations, and metadata with ACID guarantees. Single instance or primary-replica setup for reads.', 'Data persistence is a separate concern from business logic. Isolating the database layer allows switching storage technologies, implementing sharding, or adding caches without rewriting services.', 'Solves data durability, enables complex queries for conversations, maintains referential integrity, supports transactional operations for payments or status updates later.')">
-                    <div class="card-header">
-                        <div class="card-title">Primary Database</div>
-                        <span class="type-badge data">Data</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">PostgreSQL/MySQL storing users, messages, and metadata with ACID guarantees.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Decouples storage technology from business logic for future scaling flexibility.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Ensures data durability, supports complex relational queries, maintains referential integrity, and enables transactional consistency for critical operations.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase I · Baseline</div>
-                </div>
-
-                <div class="component-card data" onclick="openModal('Object Storage', 'data', 'Phase I', 'S3-compatible or local storage for media files, backup archives, and large attachments. Organized by user ID and timestamp prefixes for simple retrieval.', 'Block storage databases cannot efficiently store multi-GB media. Object storage provides infinite scalability, CDN compatibility, and cost-tiering for infrequently accessed files.', 'Solves unlimited media scaling, reduces database bloat, enables lifecycle policies for cost optimization, and provides durable 11-nines availability for user-generated content.')">
-                    <div class="card-header">
-                        <div class="card-title">Object Storage</div>
-                        <span class="type-badge data">Data</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">S3-compatible storage for media, backups, and attachments with high durability.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Databases cannot efficiently store large binary files; object stores scale infinitely.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Provides infinite scale for media, reduces primary DB bloat, enables cost-tiering, and offers 11-nines durability for user content protection.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase I · Baseline</div>
-                </div>
-
-                <div class="component-card business" onclick="openModal('Push Notification Service', 'business', 'Phase I', 'Integrates with FCM and APNS to deliver offline push notifications for new messages, calls, and app updates when users are not actively connected.', 'Push logic involves third-party SDKs, certificate management, and retry policies unrelated to core chat. Separation allows platform-specific handling without polluting chat service.', 'Solves offline user reachability, reduces missed messages, handles platform-specific delivery quirks, and manages device token rotation and invalidation automatically.')">
-                    <div class="card-header">
-                        <div class="card-title">Push Notification Service</div>
-                        <span class="type-badge business">Business</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">FCM/APNS integration for offline message alerts and call notifications.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Third-party SDKs and certificate management should not pollute core chat logic.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Reaches offline users, handles platform-specific delivery, manages device token lifecycle, and retries failed deliveries without blocking chat flow.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase I · Baseline</div>
-                </div>
-
-                <div class="component-card edge" onclick="openModal('Client Applications', 'edge', 'Phase I', 'iOS, Android, Web, and Desktop clients handling local storage, encryption key management, message rendering, and offline queueing for resilience.', 'Clients are distribution endpoints, not backend services. Separating client architecture enables independent release cycles, A/B testing, and platform-specific UX optimization.', 'Solves cross-platform reach, enables offline message drafting, manages local SQLite caching, handles E2E encryption on-device, and provides native platform integrations like share sheets.')">
-                    <div class="card-header">
-                        <div class="card-title">Client Applications</div>
-                        <span class="type-badge edge">Edge</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">iOS, Android, Web, Desktop apps with local storage and offline support.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Enables independent release cycles and platform-specific UX optimization.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Provides cross-platform access, enables offline drafting, manages local caching, handles on-device encryption, and integrates with native OS features seamlessly.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase I · Baseline</div>
-                </div>
-            </div>
+        <div class="intro-section">
+            <h3>🎯 Learning Objectives</h3>
+            <ul>
+                <li>Understand how 52 components evolve across 6 scaling phases</li>
+                <li>Identify why each service is separated and the problems it solves</li>
+                <li>Learn component categorization: Core, Platform, Data, Edge, Operations, Business, AI</li>
+                <li>Click phase tabs below to explore component additions and enhancements at each scale</li>
+            </ul>
         </div>
 
-        <!-- Phase II -->
-        <div class="phase-section" id="phase-1">
-            <div class="phase-header">
-                <h2>⚡ Phase II: Stability & Features (1K → 10K users)</h2>
-                <p class="goal"><strong>Goal:</strong> Add group messaging, contact discovery, async processing, caching, and basic observability. Focus shifts from MVP to reliability, decoupling, and feature expansion.</p>
-                <div class="new-components">
-                    <span class="badge" style="background: var(--type-platform)">3 Platform</span>
-                    <span class="badge" style="background: var(--type-core)">2 Core</span>
-                    <span class="badge" style="background: var(--type-ops)">1 Operations</span>
-                </div>
-            </div>
-            <div class="carousel-grid">
-                <div class="component-card platform" onclick="openModal('Message Queue', 'platform', 'Phase II', 'Kafka or RabbitMQ handling async message processing, event streaming between services, and decoupling of write-heavy operations from real-time paths.', 'Synchronous processing creates cascading failures. A queue absorbs traffic spikes, enables retry logic, and allows services to process at their own pace without blocking callers.', 'Solves traffic spike absorption, prevents cascade failures, enables event sourcing for audit trails, allows retry of failed operations, and decouples producers from consumers.')">
-                    <div class="card-header">
-                        <div class="card-title">Message Queue</div>
-                        <span class="type-badge platform">Platform</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Kafka/RabbitMQ for async processing, event streaming, and service decoupling.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Absorbs traffic spikes and prevents cascade failures between services.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Absorbs traffic bursts, prevents cascade failures, enables event sourcing, supports retry logic, and decouples real-time from batch processing.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase II · New</div>
-                </div>
-
-                <div class="component-card core" onclick="openModal('Contact Service', 'core', 'Phase II', 'Manages phone number discovery, contact matching against registered users, address book syncing, and privacy-controlled visibility settings.', 'Contact lookup requires heavy read operations and privacy logic distinct from messaging. Separating it prevents chat service overload and enables rate-limited contact discovery.', 'Solves contact discovery at scale, prevents address book abuse, enables privacy-first matching without exposing all users, and handles periodic sync from device contacts.')">
-                    <div class="card-header">
-                        <div class="card-title">Contact Service</div>
-                        <span class="type-badge core">Core</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Phone number matching, address book sync, and contact discovery with privacy.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Heavy read patterns and privacy logic differ from core messaging flows.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables privacy-preserving discovery, prevents contact scraping abuse, handles large address books, and manages visibility settings per user preference.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase II · New</div>
-                </div>
-
-                <div class="component-card core" onclick="openModal('Group Service', 'core', 'Phase II', 'Manages group creation, member administration, permissions, group metadata, and broadcast message distribution to all participants.', 'Group logic involves membership lists, admin hierarchies, and broadcast patterns fundamentally different from 1:1 chat. Separation allows specialized fan-out and permission checking.', 'Solves group administration complexity, enables permission-based actions, handles member addition/removal atomically, and supports broadcast messaging without chat service bloat.')">
-                    <div class="card-header">
-                        <div class="card-title">Group Service</div>
-                        <span class="type-badge core">Core</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Group creation, membership management, permissions, and broadcast distribution.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Group broadcast and permission logic differs fundamentally from 1:1 messaging.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Handles complex membership states, enables admin controls, supports large groups, and manages atomic member updates without corrupting conversation threads.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase II · New</div>
-                </div>
-
-                <div class="component-card platform" onclick="openModal('Cache Layer', 'platform', 'Phase II', 'Redis cluster caching hot data like user sessions, recent messages, contact lists, and rate limit counters to reduce database load.', 'Repeated identical queries overload primary databases. A cache layer serves hot data in milliseconds, reducing DB CPU and enabling horizontal scaling of read traffic.', 'Solves database read overload, reduces latency to milliseconds, enables session management at scale, supports rate limiting, and provides pub/sub for real-time features.')">
-                    <div class="card-header">
-                        <div class="card-title">Cache Layer</div>
-                        <span class="type-badge platform">Platform</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Redis cluster for hot data, sessions, recent messages, and rate counters.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Repeated queries overload databases; caches serve hot data in milliseconds.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Reduces DB read load by 80%+, enables session management, supports real-time pub/sub, and provides sub-millisecond access for frequently requested data.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase II · New</div>
-                </div>
-
-                <div class="component-card platform" onclick="openModal('Rate Limiter', 'platform', 'Phase II', 'Token bucket or sliding window rate limiting per user, IP, and API endpoint to prevent abuse, spam, and resource exhaustion attacks.', 'Without rate limiting, a single abusive user or bot can degrade service for everyone. Separation centralizes throttling policy and enables dynamic adjustment without code changes.', 'Solves API abuse prevention, protects against DDoS and scraping, ensures fair resource allocation, prevents spam message floods, and maintains service stability during attacks.')">
-                    <div class="card-header">
-                        <div class="card-title">Rate Limiter</div>
-                        <span class="type-badge platform">Platform</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Token bucket limiting per user, IP, and endpoint to prevent API abuse.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Centralizes throttling policy and enables dynamic adjustment without deployments.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Prevents API abuse and DDoS, ensures fair resource usage, stops spam floods, and maintains stability without manual intervention during traffic spikes.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase II · New</div>
-                </div>
-
-                <div class="component-card operations" onclick="openModal('Monitoring & Logging', 'operations', 'Phase II', 'Prometheus, Grafana, and ELK stack collecting metrics, distributed traces, error logs, and alerting on service health, latency, and error rates.', 'You cannot improve what you do not measure. Separating observability from business code ensures consistent instrumentation and prevents logging logic from affecting application performance.', 'Solves production debugging, enables proactive incident response, provides latency insights for optimization, tracks error trends, and ensures SLA compliance through data-driven decisions.')">
-                    <div class="card-header">
-                        <div class="card-title">Monitoring & Logging</div>
-                        <span class="type-badge operations">Operations</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Prometheus/Grafana/ELK for metrics, traces, logs, and health alerting.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Prevents instrumentation code from impacting application performance.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables production debugging, proactive incident response, latency optimization, error trend analysis, and SLA compliance through comprehensive observability.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase II · New</div>
-                </div>
-            </div>
-
-            <div class="evolution-section">
-                <h3>📈 Phase I → Phase II Evolution</h3>
-                <div class="evolution-timeline">
-                    <div class="evo-item">
-                        <div class="evo-phase">Chat Service Upgrade</div>
-                        <div class="evo-desc">Added group broadcast capabilities and integrated with Message Queue for async delivery receipts.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Media Service Upgrade</div>
-                        <div class="evo-desc">Connected to Message Queue for background processing and Cache Layer for popular media CDN prep.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Database Upgrade</div>
-                        <div class="evo-desc">Added read replicas for contact lookups and group metadata queries to reduce primary load.</div>
-                    </div>
-                </div>
-            </div>
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background: var(--wa-core)"></div>Core Service</div>
+            <div class="legend-item"><div class="legend-dot" style="background: var(--wa-platform)"></div>Platform</div>
+            <div class="legend-item"><div class="legend-dot" style="background: var(--wa-data)"></div>Data Layer</div>
+            <div class="legend-item"><div class="legend-dot" style="background: var(--wa-edge)"></div>Edge/Gateway</div>
+            <div class="legend-item"><div class="legend-dot" style="background: var(--wa-operations)"></div>Operations</div>
+            <div class="legend-item"><div class="legend-dot" style="background: var(--wa-business)"></div>Business</div>
+            <div class="legend-item"><div class="legend-dot" style="background: var(--wa-ai)"></div>AI/ML</div>
         </div>
 
-        <!-- Phase III -->
-        <div class="phase-section" id="phase-2">
-            <div class="phase-header">
-                <h2>🔥 Phase III: Scale & Performance (10K → 100K users)</h2>
-                <p class="goal"><strong>Goal:</strong> Horizontal scaling through database sharding, real-time presence, message search, CDN integration, end-to-end encryption, and analytics pipeline.</p>
-                <div class="new-components">
-                    <span class="badge" style="background: var(--type-platform)">2 Platform</span>
-                    <span class="badge" style="background: var(--type-core)">2 Core</span>
-                    <span class="badge" style="background: var(--type-data)">1 Data</span>
-                    <span class="badge" style="background: var(--type-edge)">1 Edge</span>
-                    <span class="badge" style="background: var(--type-business)">1 Business</span>
-                </div>
-            </div>
-            <div class="carousel-grid">
-                <div class="component-card platform" onclick="openModal('Shard Manager', 'platform', 'Phase III', 'Automated database sharding logic distributing users and messages across multiple database clusters based on consistent hashing or user ID ranges.', 'Single database instances hit hardware limits around 10K active users. Sharding is a platform concern that should abstract complexity from core services through a unified routing layer.', 'Solves horizontal database scaling, prevents single-node bottlenecks, enables infinite storage growth, maintains query performance under millions of rows, and supports geographic distribution.')">
-                    <div class="card-header">
-                        <div class="card-title">Shard Manager</div>
-                        <span class="type-badge platform">Platform</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Automated sharding routing users and messages across database clusters via hashing.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Abstracts sharding complexity from core services through unified routing.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables horizontal DB scaling, eliminates single-node limits, supports infinite growth, maintains performance under massive data volume, and allows geo-sharding.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase III · New</div>
-                </div>
+        <div class="phase-nav" id="phaseNav"></div>
 
-                <div class="component-card core" onclick="openModal('Presence Service', 'core', 'Phase III', 'Tracks online/offline status, last seen timestamps, and typing indicators with ephemeral state stored in high-performance memory stores.', 'Presence data is ephemeral, high-write, and low-value if lost. It needs different storage (Redis) and consistency (eventual) than persistent messages, warranting separation.', 'Solves real-time status broadcasting, handles millions of concurrent state changes, enables typing indicators, manages last-seen privacy settings, and reduces load on persistent stores.')">
-                    <div class="card-header">
-                        <div class="card-title">Presence Service</div>
-                        <span class="type-badge core">Core</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Tracks online status, last seen, and typing indicators with ephemeral storage.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Ephemeral high-write data needs different storage and consistency than messages.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Handles millions of state changes, enables real-time typing, manages privacy settings, and prevents ephemeral data from polluting persistent databases.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase III · New</div>
-                </div>
-
-                <div class="component-card platform" onclick="openModal('Search Service', 'platform', 'Phase III', 'Elasticsearch or OpenSearch indexing messages, contacts, and media metadata for full-text search with fuzzy matching and filters.', 'Search requires inverted indices, tokenization, and ranking algorithms completely different from relational storage. Integrating into the primary database would cripple write performance.', 'Solves full-text message search, enables contact discovery by name, supports fuzzy matching for typos, provides filtered results by date or sender, and scales independently of chat traffic.')">
-                    <div class="card-header">
-                        <div class="card-title">Search Service</div>
-                        <span class="type-badge platform">Platform</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Elasticsearch indexing messages and contacts for full-text search with filters.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Inverted indices and tokenization differ completely from relational storage patterns.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables fast full-text search, supports fuzzy matching, filters by date/sender, and prevents search indexing from degrading primary database write performance.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase III · New</div>
-                </div>
-
-                <div class="component-card edge" onclick="openModal('CDN', 'edge', 'Phase III', 'Content Delivery Network caching media files at edge locations globally to reduce latency and origin server load for image/video delivery.', 'Serving media from origin servers creates latency and bandwidth bottlenecks. A CDN caches content geographically close to users, offloading 90%+ of media traffic from origin.', 'Solves global media latency, reduces origin bandwidth costs by 90%+, handles traffic spikes during viral content, improves user experience on slow networks, and provides DDoS protection.')">
-                    <div class="card-header">
-                        <div class="card-title">CDN (Content Delivery)</div>
-                        <span class="type-badge edge">Edge</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Global edge caching for media files to reduce latency and origin load.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Geographic distribution requires specialized edge infrastructure beyond origin servers.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Reduces global latency, cuts bandwidth costs significantly, handles viral traffic spikes, improves mobile experience, and provides edge-level DDoS mitigation.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase III · New</div>
-                </div>
-
-                <div class="component-card core" onclick="openModal('E2E Encryption Service', 'core', 'Phase III', 'Signal Protocol implementation managing key exchange, session establishment, message encryption/decryption, and security ratcheting for privacy.', 'Cryptographic operations are CPU-intensive and security-critical. Isolating them enables hardware security module integration, auditability, and prevents crypto bugs from affecting chat logic.', 'Solves message interception prevention, enables forward secrecy, protects against man-in-the-middle attacks, ensures regulatory privacy compliance, and builds user trust through verifiable security.')">
-                    <div class="card-header">
-                        <div class="card-title">E2E Encryption Service</div>
-                        <span class="type-badge core">Core</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Signal Protocol for key exchange, session encryption, and forward secrecy management.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Crypto operations are CPU-intensive and need isolated auditability and HSM support.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Prevents interception, enables forward secrecy, stops MITM attacks, ensures compliance, and isolates security logic for formal verification and auditing.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase III · New</div>
-                </div>
-
-                <div class="component-card business" onclick="openModal('Analytics Pipeline', 'business', 'Phase III', 'Event collection and processing pipeline tracking message volume, user engagement, feature adoption, and performance metrics via Kafka to data warehouse.', 'Analytics queries are batch-oriented and scan massive datasets, conflicting with real-time operational workloads. Separation prevents analytical queries from slowing down user-facing services.', 'Solves business intelligence needs, enables data-driven feature decisions, tracks system performance trends, supports A/B testing infrastructure, and provides usage patterns for capacity planning.')">
-                    <div class="card-header">
-                        <div class="card-title">Analytics Pipeline</div>
-                        <span class="type-badge business">Business</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Event tracking pipeline for engagement metrics and performance analytics.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Batch analytical queries conflict with real-time operational workloads and latency.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables data-driven decisions, tracks engagement patterns, supports capacity planning, prevents analytics from slowing production, and powers business reporting.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase III · New</div>
-                </div>
-            </div>
-
-            <div class="evolution-section">
-                <h3>📈 Phase II → Phase III Evolution</h3>
-                <div class="evolution-timeline">
-                    <div class="evo-item">
-                        <div class="evo-phase">Database Upgrade</div>
-                        <div class="evo-desc">Migrated to sharded architecture via Shard Manager. Added read replicas in 3 regions.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Media Service Upgrade</div>
-                        <div class="evo-desc">Integrated CDN for delivery and added encryption layer for E2E media protection before upload.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">WebSocket Manager Upgrade</div>
-                        <div class="evo-desc">Added presence broadcast integration and connection pooling across multiple nodes with Redis pub/sub.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Cache Layer Upgrade</div>
-                        <div class="evo-desc">Expanded to multi-node Redis cluster with sentinel for HA. Added presence state caching.</div>
-                    </div>
-                </div>
-            </div>
+        <div class="phase-info" id="phaseInfo">
+            <h2>Phase I: 0 to 1,000 Users</h2>
+            <p>The MVP monolith phase. Focus is on proving product-market fit with minimal infrastructure. All components are tightly coupled but functionally separated by concern.</p>
         </div>
 
-        <!-- Phase IV -->
-        <div class="phase-section" id="phase-3">
-            <div class="phase-header">
-                <h2>🌍 Phase IV: Growth & Globalization (100K → 1M users)</h2>
-                <p class="goal"><strong>Goal:</strong> Multi-region deployment, advanced media processing, cold storage archiving, spam detection, admin tools, and subscription management for global scale.</p>
-                <div class="new-components">
-                    <span class="badge" style="background: var(--type-core)">1 Core</span>
-                    <span class="badge" style="background: var(--type-data)">2 Data</span>
-                    <span class="badge" style="background: var(--type-platform)">1 Platform</span>
-                    <span class="badge" style="background: var(--type-ops)">1 Operations</span>
-                    <span class="badge" style="background: var(--type-business)">1 Business</span>
-                </div>
-            </div>
-            <div class="carousel-grid">
-                <div class="component-card core" onclick="openModal('Media Pipeline', 'core', 'Phase IV', 'Advanced processing including video transcoding, image compression, format conversion, thumbnail generation, and adaptive bitrate streaming preparation.', 'Media processing is CPU-heavy and asynchronous. Isolating transcoding farms prevents CPU starvation on chat servers and allows GPU/ASIC hardware specialization for video.', 'Solves bandwidth optimization, enables adaptive streaming, reduces storage costs via compression, supports multiple device formats, and prevents processing from blocking real-time chat.')">
-                    <div class="card-header">
-                        <div class="card-title">Media Pipeline</div>
-                        <span class="type-badge core">Core</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Video transcoding, image compression, format conversion, and adaptive bitrate prep.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">CPU-heavy transcoding needs specialized hardware and must not block chat servers.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Optimizes bandwidth and storage, enables adaptive streaming, supports all devices, and isolates heavy CPU work from real-time messaging paths.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase IV · New</div>
-                </div>
+        <div class="stats-bar" id="statsBar"></div>
 
-                <div class="component-card data" onclick="openModal('Message Archive', 'data', 'Phase IV', 'Cold storage system migrating old messages to cheaper storage tiers like Glacier or tape after configurable retention periods while maintaining searchability.', 'Hot databases become prohibitively expensive with billions of messages. Archiving old data reduces primary storage costs by 70%+ while keeping data accessible for compliance and search.', 'Solves storage cost explosion, maintains regulatory compliance for message retention, enables historical search without hot DB bloat, and supports legal discovery requirements.')">
-                    <div class="card-header">
-                        <div class="card-title">Message Archive</div>
-                        <span class="type-badge data">Data</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Cold storage migration for old messages to cheaper tiers with retained search.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Hot database costs explode with billions of rows; cold tiers reduce costs 70%+.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Cuts storage costs dramatically, maintains compliance retention, enables historical search, and prevents primary database degradation from massive dataset size.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase IV · New</div>
-                </div>
-
-                <div class="component-card data" onclick="openModal('Multi-Region DB', 'data', 'Phase IV', 'Cross-region database replication with conflict-free replicated data types, regional read replicas, and write forwarding to primary regions for global latency reduction.', 'Single-region databases create 200ms+ latency for distant users. Multi-region setup provides local reads and disaster recovery but requires complex consistency management.', 'Solves global read latency, enables regional failover during outages, supports data sovereignty laws, distributes write load geographically, and provides 99.999% availability.')">
-                    <div class="card-header">
-                        <div class="card-title">Multi-Region Database</div>
-                        <span class="type-badge data">Data</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Cross-region replication with local read replicas and conflict resolution strategies.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Global users need local reads; single-region creates unacceptable latency.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Eliminates global latency, enables regional failover, supports data sovereignty, distributes load, and achieves five-nines availability for critical messaging.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase IV · New</div>
-                </div>
-
-                <div class="component-card platform" onclick="openModal('Spam & Abuse Detection', 'platform', 'Phase IV', 'ML-based content classification detecting spam messages, malicious links, bulk messaging patterns, and account takeover attempts in real-time.', 'Spam detection requires ML models, feature engineering, and training pipelines unrelated to chat delivery. Separation allows model updates without service redeployment and specialized ML infra.', 'Solves platform abuse, prevents phishing attacks, detects bulk spam campaigns, protects user inboxes, and maintains platform reputation through automated content moderation.')">
-                    <div class="card-header">
-                        <div class="card-title">Spam & Abuse Detection</div>
-                        <span class="type-badge platform">Platform</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">ML classification for spam, malicious links, and bulk messaging detection.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">ML pipelines need specialized infrastructure and frequent model updates independently.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Prevents spam floods, stops phishing, detects abuse patterns, protects users, and enables continuous model improvement without affecting chat reliability.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase IV · New</div>
-                </div>
-
-                <div class="component-card operations" onclick="openModal('Admin Portal', 'operations', 'Phase IV', 'Web-based administrative interface for user support, content moderation, account suspension, system health dashboards, and configuration management.', 'Admin tools have different authentication, authorization, and UI needs than consumer features. Separation enables role-based access, audit logging, and compliance requirements specific to internal tools.', 'Solves operational visibility, enables support team efficiency, provides moderation capabilities, tracks admin actions for compliance, and centralizes system configuration management.')">
-                    <div class="card-header">
-                        <div class="card-title">Admin Portal</div>
-                        <span class="type-badge operations">Operations</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Web admin interface for support, moderation, health dashboards, and config.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Internal tools need different auth, RBAC, and audit requirements than consumer apps.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables support operations, content moderation, system monitoring, compliance auditing, and separates internal tool security from public-facing endpoints.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase IV · New</div>
-                </div>
-
-                <div class="component-card business" onclick="openModal('Billing Service', 'business', 'Phase IV', 'Payment processing, subscription management, usage metering, invoice generation, and integration with payment providers for premium features or business accounts.', 'Billing involves PCI-DSS compliance, financial reconciliation, and third-party payment APIs. Isolating it ensures security audit scope containment and prevents payment bugs from affecting chat.', 'Solves monetization infrastructure, ensures PCI compliance scope containment, handles subscription lifecycles, prevents revenue loss from billing errors, and supports multiple payment methods globally.')">
-                    <div class="card-header">
-                        <div class="card-title">Billing Service</div>
-                        <span class="type-badge business">Business</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Payment processing, subscriptions, usage metering, and invoice generation.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">PCI-DSS compliance and financial logic must be isolated for security auditing.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables monetization, contains PCI scope, handles global payments, prevents revenue loss, and manages subscription states independently from messaging.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase IV · New</div>
-                </div>
-            </div>
-
-            <div class="evolution-section">
-                <h3>📈 Phase III → Phase IV Evolution</h3>
-                <div class="evolution-timeline">
-                    <div class="evo-item">
-                        <div class="evo-phase">Shard Manager Upgrade</div>
-                        <div class="evo-desc">Added cross-region shard awareness and automated rebalancing based on geographic user density.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Media Service Upgrade</div>
-                        <div class="evo-desc">Integrated Media Pipeline for background transcoding and multi-format delivery via CDN.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Search Service Upgrade</div>
-                        <div class="evo-desc">Added archive index support to search cold storage messages with unified query interface.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Monitoring Upgrade</div>
-                        <div class="evo-desc">Expanded to multi-region dashboards and integrated with Admin Portal for unified ops view.</div>
-                    </div>
-                </div>
-            </div>
+        <div class="carousel-container">
+            <div class="carousel-track" id="carouselTrack"></div>
         </div>
+        <div class="scroll-indicator">← Scroll or use arrows to navigate cards →</div>
 
-        <!-- Phase V -->
-        <div class="phase-section" id="phase-4">
-            <div class="phase-header">
-                <h2>🌐 Phase V: Global Dominance (1M → 10M users)</h2>
-                <p class="goal"><strong>Goal:</strong> Voice/video calling, global load balancing, intelligent caching, disaster recovery, compliance automation, A/B testing, and enterprise features.</p>
-                <div class="new-components">
-                    <span class="badge" style="background: var(--type-core)">1 Core</span>
-                    <span class="badge" style="background: var(--type-edge)">1 Edge</span>
-                    <span class="badge" style="background: var(--type-platform)">1 Platform</span>
-                    <span class="badge" style="background: var(--type-ops)">1 Operations</span>
-                    <span class="badge" style="background: var(--type-business)">2 Business</span>
-                </div>
-            </div>
-            <div class="carousel-grid">
-                <div class="component-card core" onclick="openModal('Voice & Video Service', 'core', 'Phase V', 'WebRTC-based real-time communication infrastructure with SFU/MCU architecture, call signaling, NAT traversal, and bandwidth adaptation.', 'Real-time media has strict latency requirements (sub-200ms), UDP-based transport, and codec dependencies fundamentally different from text messaging. It requires specialized infrastructure.', 'Solves real-time audio/video communication, enables group calls, adapts to network conditions, provides NAT traversal for connectivity, and supports screen sharing and recording.')">
-                    <div class="card-header">
-                        <div class="card-title">Voice & Video Service</div>
-                        <span class="type-badge core">Core</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">WebRTC SFU/MCU infrastructure for calls, signaling, and bandwidth adaptation.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Real-time media needs UDP, sub-200ms latency, and codec handling unlike text.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables HD calling, group video, network adaptation, NAT traversal, and isolates media traffic from text messaging for quality-of-service prioritization.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase V · New</div>
-                </div>
-
-                <div class="component-card edge" onclick="openModal('Global Load Balancer', 'edge', 'Phase V', 'Anycast DNS and geographic traffic management routing users to nearest healthy data centers with latency-based and health-check-aware routing policies.', 'As user geography expands, simple round-robin load balancing fails. Global LB considers network latency, server health, capacity, and compliance boundaries for optimal routing.', 'Solves global latency minimization, enables automatic failover between regions, respects data sovereignty boundaries, distributes load intelligently, and handles DDoS absorption at edge.')">
-                    <div class="card-header">
-                        <div class="card-title">Global Load Balancer</div>
-                        <span class="type-badge edge">Edge</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Anycast DNS with latency-based routing to nearest healthy data centers.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Geographic routing needs specialized edge infrastructure beyond local load balancers.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Minimizes global latency, enables regional failover, respects data residency, absorbs DDoS at edge, and routes users intelligently based on real-time conditions.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase V · New</div>
-                </div>
-
-                <div class="component-card platform" onclick="openModal('Smart Caching', 'platform', 'Phase V', 'Multi-tier caching with cache warming, predictive prefetching, regional cache invalidation, and machine learning-based cache eviction policies.', 'Basic Redis cannot handle 10M+ users efficiently. Smart caching adds predictive layers, regional coherence, and ML-driven eviction to maximize hit rates and minimize origin fetches.', 'Solves cache stampede prevention, enables predictive content delivery, reduces origin load by 95%+, maintains cache consistency across regions, and optimizes storage cost per user.')">
-                    <div class="card-header">
-                        <div class="card-title">Smart Caching</div>
-                        <span class="type-badge platform">Platform</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Multi-tier cache with predictive warming, regional invalidation, and ML eviction.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Basic caching cannot handle 10M+ users; needs predictive and regional intelligence.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Prevents cache stampedes, enables predictive prefetching, maintains cross-region consistency, maximizes hit rates, and reduces database load to near zero for hot data.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase V · New</div>
-                </div>
-
-                <div class="component-card operations" onclick="openModal('Disaster Recovery', 'operations', 'Phase V', 'Automated backup strategies, cross-region replication, point-in-time recovery, chaos engineering platforms, and runbook automation for catastrophic failures.', 'At 10M users, manual recovery is impossible. DR automation ensures RPO/RTO targets, tests failover procedures continuously, and validates backup integrity without human intervention.', 'Solves catastrophic failure recovery, ensures business continuity, automates failover testing, maintains regulatory backup requirements, and reduces mean-time-to-recovery from hours to minutes.')">
-                    <div class="card-header">
-                        <div class="card-title">Disaster Recovery</div>
-                        <span class="type-badge operations">Operations</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Automated backups, cross-region replication, chaos engineering, and runbooks.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">DR is a cross-cutting concern requiring dedicated automation and testing infrastructure.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Ensures business continuity, automates failover, meets RPO/RTO targets, runs chaos experiments, and reduces recovery time from hours to minutes automatically.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase V · New</div>
-                </div>
-
-                <div class="component-card business" onclick="openModal('Compliance Engine', 'business', 'Phase V', 'GDPR, CCPA, and regional compliance automation handling data deletion requests, consent management, data residency enforcement, and audit report generation.', 'Compliance requirements vary by region and evolve constantly. A dedicated engine automates legal workflows, tracks consent states, and generates regulatory reports without engineering involvement.', 'Solves regulatory compliance automation, handles right-to-erasure requests, manages consent state machines, enforces data residency, and generates audit trails for legal investigations.')">
-                    <div class="card-header">
-                        <div class="card-title">Compliance Engine</div>
-                        <span class="type-badge business">Business</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">GDPR/CCPA automation for deletion, consent, residency, and audit reporting.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Legal workflows evolve constantly and should not require engineering deployments.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Automates legal compliance, handles deletion requests, manages consent, enforces residency, and generates regulatory reports without code changes or manual engineering.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase V · New</div>
-                </div>
-
-                <div class="component-card business" onclick="openModal('A/B Testing Platform', 'business', 'Phase V', 'Feature flag management, experiment assignment, variant tracking, and statistical significance calculation for rolling out features safely to subsets of users.', 'Releasing features to 10M users without testing is reckless. A/B platform enables gradual rollouts, instant rollback, and data-driven feature validation without redeployment.', 'Solves safe feature rollout, enables data-driven product decisions, supports gradual exposure to limit blast radius, provides instant rollback capability, and validates features with statistical rigor.')">
-                    <div class="card-header">
-                        <div class="card-title">A/B Testing Platform</div>
-                        <span class="type-badge business">Business</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Feature flags, experiment assignment, and statistical validation for rollouts.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Experiment logic should not be hardcoded; needs dynamic control and analytics.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables safe rollouts, instant rollback, blast radius limitation, statistical validation, and decouples feature release from code deployment for operational agility.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase V · New</div>
-                </div>
-            </div>
-
-            <div class="evolution-section">
-                <h3>📈 Phase IV → Phase V Evolution</h3>
-                <div class="evolution-timeline">
-                    <div class="evo-item">
-                        <div class="evo-phase">API Gateway Upgrade</div>
-                        <div class="evo-desc">Replaced with Global Load Balancer for geographic routing and integrated WebRTC signaling proxy for voice/video.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Cache Layer Upgrade</div>
-                        <div class="evo-desc">Evolved into Smart Caching with predictive warming and regional invalidation mesh.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">E2E Encryption Upgrade</div>
-                        <div class="evo-desc">Added group call encryption and hardware security module integration for key storage.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Analytics Pipeline Upgrade</div>
-                        <div class="evo-desc">Integrated with A/B Testing Platform for automatic experiment result calculation and reporting.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Phase VI -->
-        <div class="phase-section" id="phase-5">
-            <div class="phase-header">
-                <h2>👑 Phase VI: Ecosystem & AI (10M+ users)</h2>
-                <p class="goal"><strong>Goal:</strong> AI-powered features, massive data lakes, edge computing, developer platforms, advanced security, and ecosystem expansion for sustained dominance.</p>
-                <div class="new-components">
-                    <span class="badge" style="background: var(--type-platform)">2 Platform</span>
-                    <span class="badge" style="background: var(--type-data)">1 Data</span>
-                    <span class="badge" style="background: var(--type-edge)">2 Edge</span>
-                    <span class="badge" style="background: var(--type-ops)">1 Operations</span>
-                    <span class="badge" style="background: var(--type-business)">1 Business</span>
-                </div>
-            </div>
-            <div class="carousel-grid">
-                <div class="component-card platform" onclick="openModal('AI/ML Platform', 'platform', 'Phase VI', 'Machine learning infrastructure powering smart replies, real-time translation, content moderation, voice-to-text, and predictive user behavior models.', 'AI models require GPU clusters, training pipelines, and inference optimization completely separate from operational services. Separation enables ML engineers to iterate without platform risk.', 'Solves intelligent user assistance, enables real-time translation across languages, automates advanced content moderation, provides voice transcription, and predicts user needs for proactive features.')">
-                    <div class="card-header">
-                        <div class="card-title">AI/ML Platform</div>
-                        <span class="type-badge platform">Platform</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">GPU-powered ML for smart replies, translation, moderation, and voice-to-text.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">ML needs GPU clusters and training pipelines separate from production services.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables intelligent assistance, real-time translation, advanced moderation, voice transcription, and allows ML teams to iterate without production risk.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase VI · New</div>
-                </div>
-
-                <div class="component-card data" onclick="openModal('Data Lake', 'data', 'Phase VI', 'Petabyte-scale data warehouse aggregating structured and unstructured data for business intelligence, ML training, historical analysis, and regulatory archiving.', 'Operational databases cannot support petabyte-scale analytical queries. A data lake using columnar storage and batch processing enables deep insights without impacting production performance.', 'Solves massive-scale analytics, enables ML training datasets, supports historical trend analysis, provides regulatory long-term archiving, and powers business intelligence without production impact.')">
-                    <div class="card-header">
-                        <div class="card-title">Data Lake</div>
-                        <span class="type-badge data">Data</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Petabyte warehouse for BI, ML training, and historical analysis with columnar storage.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Petabyte analytics queries would cripple operational databases and violate SLAs.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables massive-scale BI, feeds ML training, supports long-term trends, provides regulatory archives, and completely isolates analytical load from production systems.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase VI · New</div>
-                </div>
-
-                <div class="component-card edge" onclick="openModal('Edge Computing', 'edge', 'Phase VI', 'Processing nodes at ISP and cellular edges running message filtering, compression, lightweight ML inference, and connection optimization close to users.', 'Round trips to central data centers waste bandwidth and add latency. Edge computing processes data geographically closer, reducing backbone traffic and improving responsiveness.', 'Solves last-mile latency, reduces backbone bandwidth costs, enables offline-first capabilities, processes data closer to users for privacy, and supports real-time edge ML inference.')">
-                    <div class="card-header">
-                        <div class="card-title">Edge Computing</div>
-                        <span class="type-badge edge">Edge</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">ISP-edge nodes for filtering, compression, and lightweight ML inference.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Centralized processing wastes bandwidth; edge nodes reduce round trips significantly.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Cuts last-mile latency, reduces backbone costs, enables offline-first features, improves privacy via local processing, and supports edge-based real-time inference.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase VI · New</div>
-                </div>
-
-                <div class="component-card edge" onclick="openModal('Federation Gateway', 'edge', 'Phase VI', 'Interoperability bridge connecting with other messaging protocols, business APIs, third-party integrations, and cross-platform message relay services.', 'Closed ecosystems limit growth. Federation enables business integrations, cross-app messaging, and regulatory interoperability without compromising core service architecture.', 'Solves ecosystem expansion, enables business API integrations, supports regulatory interoperability mandates, connects with enterprise systems, and generates B2B revenue streams.')">
-                    <div class="card-header">
-                        <div class="card-title">Federation Gateway</div>
-                        <span class="type-badge edge">Edge</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">Interoperability bridge for cross-platform messaging and third-party APIs.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">External protocols should not pollute internal architecture or security boundaries.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables ecosystem growth, supports regulatory interoperability, connects enterprise tools, generates B2B revenue, and isolates external protocol complexity from core services.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase VI · New</div>
-                </div>
-
-                <div class="component-card operations" onclick="openModal('Zero Trust Security', 'operations', 'Phase VI', 'Continuous verification framework enforcing mTLS everywhere, identity-aware proxies, device trust scoring, and behavioral anomaly detection across all services.', 'Perimeter security fails at hyperscale. Zero Trust assumes breach and verifies every request, device, and user continuously regardless of network location or prior authentication.', 'Solves insider threats, prevents lateral movement during breaches, enforces least-privilege access, enables device-based risk scoring, and provides continuous authentication beyond passwords.')">
-                    <div class="card-header">
-                        <div class="card-title">Zero Trust Security</div>
-                        <span class="type-badge operations">Operations</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">mTLS everywhere, identity proxies, device trust, and behavioral anomaly detection.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Security should be a unified platform layer, not scattered across service codebases.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Prevents lateral movement, stops insider threats, enforces least privilege, enables risk-based access, and assumes breach posture for continuous verification everywhere.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase VI · New</div>
-                </div>
-
-                <div class="component-card business" onclick="openModal('Developer Platform', 'business', 'Phase VI', 'APIs, webhooks, SDKs, and business account management enabling third-party developers, chatbots, payment integrations, and enterprise automation tools.', 'Developer ecosystems require sandboxing, versioning, documentation, and rate management distinct from consumer features. Separation prevents experimental code from affecting production stability.', 'Solves platform ecosystem growth, enables chatbot integrations, supports business automation, generates developer revenue, and provides sandboxed environments for third-party innovation.')">
-                    <div class="card-header">
-                        <div class="card-title">Developer Platform</div>
-                        <span class="type-badge business">Business</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detail-row">
-                            <div class="detail-label">What</div>
-                            <div class="detail-text">APIs, webhooks, SDKs, and business account tools for third-party developers.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Why Separate</div>
-                            <div class="detail-text">Third-party code needs sandboxing, versioning, and isolation from consumer stability.</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Problems Solved</div>
-                            <div class="detail-text">Enables ecosystem growth, supports business automation, generates API revenue, provides sandboxed testing, and isolates third-party failures from core messaging reliability.</div>
-                        </div>
-                    </div>
-                    <div class="card-footer"><div class="status-dot"></div>Introduced in Phase VI · New</div>
-                </div>
-            </div>
-
-            <div class="evolution-section">
-                <h3>📈 Phase V → Phase VI Evolution</h3>
-                <div class="evolution-timeline">
-                    <div class="evo-item">
-                        <div class="evo-phase">Spam Detection Upgrade</div>
-                        <div class="evo-desc">Integrated with AI/ML Platform for transformer-based content understanding and behavioral analysis.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Media Pipeline Upgrade</div>
-                        <div class="evo-desc">Added AI-powered super-resolution, background removal, and real-time translation overlays via Edge Computing.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Search Service Upgrade</div>
-                        <div class="evo-desc">Integrated neural search via AI/ML Platform for semantic message understanding beyond keyword matching.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Analytics Pipeline Upgrade</div>
-                        <div class="evo-desc">Fed into Data Lake for petabyte-scale warehousing and connected to AI/ML Platform for predictive modeling.</div>
-                    </div>
-                    <div class="evo-item">
-                        <div class="evo-phase">Global Load Balancer Upgrade</div>
-                        <div class="evo-desc">Added Edge Computing awareness for routing to nearest edge nodes with ML inference capabilities.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Framework Section -->
-        <div class="framework-section">
-            <h2>🎯 Phase-Component Design Framework</h2>
-            <p style="color: var(--wa-gray); margin-bottom: 20px; line-height: 1.6;">Use this framework when you specify a Phase (I-VI) and Component name in your next prompt. Each section is designed as an interview problem statement to maximize learning.</p>
-
-            <div class="framework-grid">
-                <div class="framework-card">
-                    <div class="framework-number">0</div>
-                    <h4>Problem Statement</h4>
-                    <p>A detailed interview-style problem description highlighting what needs to be designed at this specific phase and scale, including constraints, requirements, and success criteria.</p>
-                </div>
-                <div class="framework-card">
-                    <div class="framework-number">1</div>
-                    <h4>Subsystem Architecture</h4>
-                    <p>Architecture diagram of subsystems within the component at current phase, presented as a design exercise with clear boundaries, interfaces, and data flows.</p>
-                </div>
-                <div class="framework-card">
-                    <div class="framework-number">2</div>
-                    <h4>Interview Questions</h4>
-                    <p>A comprehensive list of questions a System Architect must answer for this phase: capacity, consistency, latency, failure modes, trade-offs, and scaling limits.</p>
-                </div>
-                <div class="framework-card">
-                    <div class="framework-number">3</div>
-                    <h4>Interactive Architecture View</h4>
-                    <p>Full detailed system architecture diagram showing how this component interacts with all other services, databases, and edge infrastructure at this phase.</p>
-                </div>
-                <div class="framework-card">
-                    <div class="framework-number">5</div>
-                    <h4>Completion Checklist</h4>
-                    <p>Everything you must design (not code) to mark this phase complete: data models, API contracts, failure scenarios, consistency models, and operational runbooks.</p>
-                </div>
-                <div class="framework-card">
-                    <div class="framework-number">6</div>
-                    <h4>Expert Answers</h4>
-                    <p>Detailed answers to all questions from the perspective of a Google System Architect with 20+ years of experience, covering edge cases and industry best practices.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal -->
-    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="modal-close" onclick="closeModal()">×</button>
-            <div class="modal-title" id="modal-title">Component Name</div>
-            <div class="modal-subtitle" id="modal-subtitle">Type · Phase</div>
-
-            <div class="modal-section">
-                <h4>What is this component about?</h4>
-                <p id="modal-what">Description...</p>
-            </div>
-            <div class="modal-section">
-                <h4>Why does it need to be separate?</h4>
-                <p id="modal-why">Reasoning...</p>
-            </div>
-            <div class="modal-section">
-                <h4>What problems does it solve?</h4>
-                <p id="modal-problems">Problems...</p>
-            </div>
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="moveCarousel(-1)">←</button>
+            <button class="nav-btn" onclick="moveCarousel(1)">→</button>
         </div>
     </div>
 
     <script>
-        function showPhase(index) {
-            document.querySelectorAll('.phase-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.phase-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('phase-' + index).classList.add('active');
-            document.querySelectorAll('.phase-tab')[index].classList.add('active');
+        const phases = [
+            {
+                id: 1,
+                name: "Phase I",
+                range: "0 → 1K",
+                title: "The MVP Monolith",
+                desc: "Prove product-market fit. Single-region deployment. Functional separation of concerns but minimal infrastructure overhead. Focus on core chat loop.",
+                stats: { components: 7, regions: 1, dbNodes: 1, newServices: 7 }
+            },
+            {
+                id: 2,
+                name: "Phase II",
+                range: "1K → 10K",
+                title: "First Scaling Pains",
+                desc: "Traffic grows 10x. Need caching, async processing, and media optimization. API Gateway introduced for security. CDN handles static assets.",
+                stats: { components: 14, regions: 1, dbNodes: 2, newServices: 7 }
+            },
+            {
+                id: 3,
+                name: "Phase III",
+                range: "10K → 100K",
+                title: "Distributed Core",
+                desc: "Sharding becomes mandatory. Presence tracking, group chats, and read receipts require dedicated stateful services. NoSQL for time-series messages.",
+                stats: { components: 23, regions: 2, dbNodes: 8, newServices: 9 }
+            },
+            {
+                id: 4,
+                name: "Phase IV",
+                range: "100K → 1M",
+                title: "Global & Secure",
+                desc: "Multi-region federation. E2E encryption at scale. Enterprise features emerge. Data lake for analytics. Kubernetes for orchestration. Abuse detection.",
+                stats: { components: 32, regions: 4, dbNodes: 24, newServices: 9 }
+            },
+            {
+                id: 5,
+                name: "Phase V",
+                range: "1M → 10M",
+                title: "Intelligence & Enterprise",
+                desc: "AI-powered features, business API, payments, voice/video. Feature store for ML. Compliance engine for GDPR. Multi-tenant architecture for B2B.",
+                stats: { components: 42, regions: 8, dbNodes: 64, newServices: 10 }
+            },
+            {
+                id: 6,
+                name: "Phase VI",
+                range: "10M+",
+                title: "Planetary Scale",
+                desc: "Edge computing, quantum-safe crypto, cross-platform bridges. Autonomous healing. Predictive caching. Global consistency via CRDTs. AR layer.",
+                stats: { components: 52, regions: 16, dbNodes: 200, newServices: 10 }
+            }
+        ];
+
+        const typeConfig = {
+            core: { color: '#25D366', bg: 'rgba(37, 211, 102, 0.15)', label: 'Core' },
+            platform: { color: '#34B7F1', bg: 'rgba(52, 183, 241, 0.15)', label: 'Platform' },
+            data: { color: '#FF6B6B', bg: 'rgba(255, 107, 107, 0.15)', label: 'Data' },
+            edge: { color: '#6C5CE7', bg: 'rgba(108, 92, 231, 0.15)', label: 'Edge' },
+            operations: { color: '#FFD93D', bg: 'rgba(255, 217, 61, 0.15)', label: 'Ops' },
+            business: { color: '#FD79A8', bg: 'rgba(253, 121, 168, 0.15)', label: 'Business' },
+            ai: { color: '#00B894', bg: 'rgba(0, 184, 148, 0.15)', label: 'AI/ML' }
+        };
+
+        const components = [
+            // Phase I
+            { name: "Client Gateway", type: "edge", phase: 1, status: "new", icon: "🌐",
+              about: "WebSocket handler maintaining persistent connections from mobile, web, and desktop clients to backend.",
+              separate: "Connection state is ephemeral and high-churn; isolating prevents memory leaks in business logic.",
+              problems: "Solves connection churn, protocol translation, and heartbeat management without crashing core chat monolith under connection storms." },
+            { name: "Identity & Auth", type: "core", phase: 1, status: "new", icon: "🔐",
+              about: "Phone-number-based OTP verification, JWT session management, and user profile storage with basic privacy.",
+              separate: "Authentication is a cross-cutting security concern requiring strict isolation from data services.",
+              problems: "Prevents credential leakage, enables multi-factor flows, and centralizes rate limiting on verification attempts globally." },
+            { name: "Chat Engine", type: "core", phase: 1, status: "new", icon: "💬",
+              about: "Core message CRUD operations, conversation metadata, and sequential ordering of message streams.",
+              separate: "Message state machine is complex; separation allows independent scaling of write-heavy chat workloads.",
+              problems: "Guarantees message ordering, idempotency on retries, and decouples send/receive pipelines for reliability." },
+            { name: "Media Store", type: "data", phase: 1, status: "new", icon: "🗄️",
+              about: "Object storage layer for images, audio, documents using S3-compatible or MinIO local storage backend.",
+              separate: "Blob I/O patterns differ radically from relational queries; dedicated store avoids database bloat.",
+              problems: "Eliminates binary data in SQL tables, enables cheap archival, and supports direct CDN offloading for downloads." },
+            { name: "Push Relay", type: "platform", phase: 1, status: "new", icon: "📲",
+              about: "Adapter service translating internal events into FCM, APNS, and Huawei push notification payloads.",
+              separate: "Push providers have unique protocols and rate limits; isolation prevents provider outages from cascading.",
+              problems: "Abstracts vendor-specific APIs, handles token refresh failures, and retries offline device deliveries gracefully." },
+            { name: "PostgreSQL Primary", type: "data", phase: 1, status: "new", icon: "🐘",
+              about: "Single-node relational database storing users, conversations, and recent messages with ACID guarantees.",
+              separate: "Structured data requires transactions; keeping it distinct from blob and cache stores ensures consistency.",
+              problems: "Provides strong consistency for financial or profile data, complex joins, and referential integrity constraints." },
+            { name: "Basic Monitoring", type: "operations", phase: 1, status: "new", icon: "📊",
+              about: "Health check endpoints, stdout logging, and simple uptime alerts via email or SMS notifications.",
+              separate: "Observability must not depend on the services it monitors to avoid blind spots during outages.",
+              problems: "Enables rapid outage detection, provides debugging trails, and establishes baseline performance metrics early." },
+
+            // Phase II
+            { name: "API Gateway", type: "edge", phase: 2, status: "new", icon: "🛡️",
+              about: "Reverse proxy handling SSL termination, request routing, API versioning, and coarse-grained throttling.",
+              separate: "Edge concerns like TLS and DDoS mitigation should not burden application services with complexity.",
+              problems: "Centralizes SSL certificate management, blocks malicious traffic early, and provides unified client entry points." },
+            { name: "Message Queue", type: "platform", phase: 2, status: "new", icon: "📨",
+              about: "Redis Streams or RabbitMQ enabling asynchronous processing of heavy or non-critical chat side effects.",
+              separate: "Async workloads have different scaling patterns; queues buffer spikes and smooth out processing rates.",
+              problems: "Decouples producers from consumers, absorbs traffic spikes, and enables reliable background job execution." },
+            { name: "Media Processing", type: "core", phase: 2, status: "new", icon: "🖼️",
+              about: "Image compression, thumbnail generation, format conversion, and metadata stripping for privacy.",
+              separate: "CPU-intensive transcoding must not starve real-time chat threads of processing resources.",
+              problems: "Reduces bandwidth costs, ensures uniform client experience, and strips EXIF metadata for user privacy." },
+            { name: "Contact Sync", type: "core", phase: 2, status: "new", icon: "👥",
+              about: "Address book hashing and matching service to discover which contacts are on the platform without exposing numbers.",
+              separate: "Privacy-sensitive contact discovery requires isolated security boundaries and audited access logs.",
+              problems: "Protects user privacy via hashed matching, prevents enumeration attacks, and manages invite workflows securely." },
+            { name: "Redis Cache", type: "data", phase: 2, status: "new", icon: "⚡",
+              about: "In-memory hot data store for sessions, recent conversations, and rate-limit counters with TTL eviction.",
+              separate: "Caching is an access-pattern optimization; mixing it with persistence complicates consistency models.",
+              problems: "Reduces database load by 80%, enables sub-millisecond reads, and absorbs read-heavy presence queries." },
+            { name: "Logging & Metrics", type: "operations", phase: 2, status: "new", icon: "📈",
+              about: "ELK stack or Grafana-Loki for centralized logs and Prometheus for service-level metric aggregation.",
+              separate: "Log volume can overwhelm primary databases; dedicated pipeline ensures queryable historical observability.",
+              problems: "Transforms raw logs into searchable insights, enables trend analysis, and satisfies audit compliance requirements." },
+            { name: "CDN Edge", type: "edge", phase: 2, status: "new", icon: "🌍",
+              about: "Content delivery network caching static assets, media blobs, and client updates near end users.",
+              separate: "Static content delivery requires geographic distribution fundamentally different from dynamic API serving.",
+              problems: "Cuts latency by serving from local PoPs, reduces origin bandwidth costs, and improves media load times." },
+
+            // Phase III
+            { name: "Message Router", type: "core", phase: 3, status: "new", icon: "🗺️",
+              about: "Shard-aware message orchestrator routing messages to correct partition based on conversation hashing.",
+              separate: "Routing logic is stateless and high-throughput; separating it allows independent scaling of delivery paths.",
+              problems: "Enables horizontal sharding without client awareness, balances load across partitions, and handles partition rebalancing safely." },
+            { name: "Presence Service", type: "core", phase: 3, status: "new", icon: "🟢",
+              about: "Online, offline, typing, and last-seen state machine with pub-sub broadcasting to relevant contacts.",
+              separate: "Presence is ephemeral, high-write, and eventually consistent; it conflicts with persistent store requirements.",
+              problems: "Scales to millions of status updates, isolates volatile state from durable messages, and enables real-time typing indicators." },
+            { name: "Group Chat Manager", type: "core", phase: 3, status: "new", icon: "👨‍👩‍👧‍👦",
+              about: "Group metadata, membership, permissions, and message fan-out orchestration for multi-recipient delivery.",
+              separate: "Group fan-out creates N-times write amplification; dedicated service controls blast radius of large groups.",
+              problems: "Prevents group messages from overwhelming single-user shards, manages admin privileges, and optimizes delivery lists." },
+            { name: "Read Receipts", type: "core", phase: 3, status: "new", icon: "✓✓",
+              about: "Double-tick tracking service aggregating per-message read status across participants in conversations.",
+              separate: "Read state generates massive write volume; isolating it protects primary message storage from churn.",
+              problems: "Reduces primary database contention, enables efficient aggregation queries, and supports privacy toggles per user." },
+            { name: "Cassandra Cluster", type: "data", phase: 3, status: "new", icon: "🌀",
+              about: "Distributed NoSQL store for time-series message history with tunable consistency and automatic replication.",
+              separate: "Write-heavy time-series data requires partition-tolerant design alien to relational database strengths.",
+              problems: "Handles millions of writes per second, provides linear scalability, and optimizes chronological message retrieval." },
+            { name: "ElasticSearch", type: "data", phase: 3, status: "new", icon: "🔍",
+              about: "Inverted index for full-text message search, contact lookup, and fuzzy matching across conversation history.",
+              separate: "Search indexing is computationally expensive and requires specialized data structures for relevance scoring.",
+              problems: "Delivers sub-second full-text search, supports complex filters, and offloads expensive queries from primary databases." },
+            { name: "Rate Limiter", type: "platform", phase: 3, status: "new", icon: "⏱️",
+              about: "Token-bucket and sliding-window rate limiting per user, IP, and API endpoint with Redis backend.",
+              separate: "Rate limiting is a cross-cutting policy concern; embedding it in every service creates inconsistency.",
+              problems: "Prevents abuse and scraping, ensures fair resource allocation, and protects downstream services from cascade failure." },
+            { name: "Backup & Archival", type: "operations", phase: 3, status: "new", icon: "💾",
+              about: "Automated snapshotting, cross-region replication, and cold storage archival for disaster recovery compliance.",
+              separate: "Backup I/O is bursty and long-running; isolating it prevents latency spikes in production paths.",
+              problems: "Ensures business continuity, satisfies regulatory retention, and enables point-in-time recovery after failures." },
+            { name: "SMS/OTP Gateway", type: "platform", phase: 3, status: "new", icon: "📩",
+              about: "Multi-provider SMS aggregator with fallback routing for OTP delivery and promotional messaging.",
+              separate: "SMS vendors vary by region and reliability; abstraction prevents single-vendor lock-in and outages.",
+              problems: "Maximizes delivery success via fallback, reduces costs through provider selection, and standardizes webhook formats." },
+
+            // Phase IV
+            { name: "E2E Encryption", type: "platform", phase: 4, status: "new", icon: "🔒",
+              about: "Signal Protocol implementation managing key exchange, session state, and cryptographic ratcheting at scale.",
+              separate: "Cryptography requires audited, isolated execution environments with strict key access controls and HSM integration.",
+              problems: "Guarantees message confidentiality even from server operators, prevents man-in-the-middle attacks, and enables forward secrecy." },
+            { name: "Federation Gateway", type: "edge", phase: 4, status: "new", icon: "🌉",
+              about: "Cross-region message routing, geo-DNS, and inter-datacenter replication coordination for global distribution.",
+              separate: "Global routing involves complex latency optimization and data residency rules distinct from local delivery.",
+              problems: "Routes users to nearest datacenter, enforces data sovereignty, and maintains consistency across geographic boundaries." },
+            { name: "Media Pipeline", type: "core", phase: 4, status: "new", icon: "🎬",
+              about: "Advanced transcoding, adaptive bitrate streaming, and CDN invalidation for video and voice messages.",
+              separate: "Video processing is GPU-intensive and batch-oriented; co-location with real-time services causes jitter.",
+              problems: "Enables smooth streaming on poor networks, reduces storage via compression, and supports multiple client codecs." },
+            { name: "Analytics Ingestion", type: "business", phase: 4, status: "new", icon: "📉",
+              about: "High-volume event collection pipeline for user behavior, feature usage, and business metric aggregation.",
+              separate: "Analytics writes are fire-and-forget; mixing them with transactional paths risks latency and data corruption.",
+              problems: "Powers data-driven decisions, identifies churn signals, and measures feature adoption without impacting user experience." },
+            { name: "Data Lake", type: "data", phase: 4, status: "new", icon: "🏔️",
+              about: "S3-based raw storage for structured, semi-structured, and unstructured data supporting batch and stream processing.",
+              separate: "Analytical queries scan terabytes; running them on production OLTP systems would cause catastrophic slowdowns.",
+              problems: "Enables historical trend analysis, feeds ML training datasets, and provides cheap long-term storage for compliance." },
+            { name: "Feature Flags", type: "operations", phase: 4, status: "new", icon: "🚩",
+              about: "Dynamic configuration service enabling gradual rollouts, A/B testing, and instant feature kill switches.",
+              separate: "Configuration changes are frequent and global; embedding them in code requires risky redeployments.",
+              problems: "Reduces deployment risk via canary releases, enables rapid incident response, and supports user-segment experiments." },
+            { name: "K8s Orchestrator", type: "operations", phase: 4, status: "new", icon: "☸️",
+              about: "Container scheduling, auto-scaling, service discovery, and rolling deployment management across clusters.",
+              separate: "Infrastructure management is a distinct competency; separating it lets developers focus on business logic.",
+              problems: "Automates capacity scaling, ensures high availability via pod distribution, and standardizes deployment procedures." },
+            { name: "Billing Engine", type: "business", phase: 4, status: "new", icon: "💳",
+              about: "Usage metering, invoice generation, and payment processing for WhatsApp Business API consumption.",
+              separate: "Financial transactions require audit trails, PCI compliance, and reconciliation logic separate from chat.",
+              problems: "Accurately meters API usage, prevents revenue leakage, and integrates with global payment providers securely." },
+            { name: "Abuse Detection", type: "ai", phase: 4, status: "new", icon: "🛡️",
+              about: "Rule-based and heuristic spam detection analyzing message patterns, velocity, and reported content.",
+              separate: "Security scanning must inspect traffic without adding latency to the critical message delivery path.",
+              problems: "Blocks bulk spam and phishing, reduces user complaints, and maintains platform trust scores with regulators." },
+
+            // Phase V
+            { name: "Business API GW", type: "edge", phase: 5, status: "new", icon: "🏢",
+              about: "Enterprise-facing gateway for official business accounts, webhooks, sandboxing, and template messaging.",
+              separate: "Enterprise traffic has different SLAs, authentication, and payload sizes than consumer chat traffic.",
+              problems: "Isolates B2B workloads from consumer traffic, enforces stricter rate limits, and enables webhook reliability guarantees." },
+            { name: "AI Chatbot Orchestrator", type: "ai", phase: 5, status: "new", icon: "🤖",
+              about: "NLP intent classification, dialog state management, and third-party bot integration platform.",
+              separate: "ML inference is GPU-heavy and unpredictable; isolating it prevents latency spikes in core messaging.",
+              problems: "Automates customer support, enables 24/7 responses, and integrates external CRM systems via standardized APIs." },
+            { name: "Message Templates", type: "business", phase: 5, status: "new", icon: "📋",
+              about: "HSM template repository, approval workflow, and localization management for business-initiated conversations.",
+              separate: "Template governance is a business policy layer; embedding it in chat logic creates coupling and audit gaps.",
+              problems: "Ensures regulatory compliance for outbound messages, streamlines approval workflows, and supports multi-language variants." },
+            { name: "Voice/Video Bridge", type: "core", phase: 5, status: "new", icon: "📹",
+              about: "WebRTC signaling, SFU/MCU selection, and real-time media routing for encrypted voice and video calls.",
+              separate: "Real-time media has strict UDP, jitter buffer, and codec requirements distinct from TCP-based messaging.",
+              problems: "Delivers low-latency calling, supports group conferences, and adapts bitrate to network conditions dynamically." },
+            { name: "Stories Engine", type: "core", phase: 5, status: "new", icon: "📖",
+              about: "Ephemeral content distribution with privacy circles, view tracking, and auto-deletion scheduling.",
+              separate: "Ephemeral content has unique delivery guarantees and retention policies unlike persistent chat messages.",
+              problems: "Enables rich media sharing with expiration, reduces long-term storage costs, and supports close-friends privacy models." },
+            { name: "Payment Core", type: "business", phase: 5, status: "new", icon: "💰",
+              about: "In-chat payment ledger, UPI/PIX integration, and peer-to-peer transfer settlement with regulatory reporting.",
+              separate: "Financial services require banking licenses, PCI-DSS compliance, and reconciliation separated from social data.",
+              problems: "Enables seamless in-app commerce, maintains transaction integrity, and generates regulatory reports automatically." },
+            { name: "Real-time Translation", type: "ai", phase: 5, status: "new", icon: "🌐",
+              about: "On-device and server hybrid translation for messages preserving context, slang, and cultural nuance.",
+              separate: "Translation is compute-intensive and optional; forcing all messages through it adds unacceptable latency.",
+              problems: "Breaks language barriers in global groups, preserves semantic meaning, and operates offline when possible." },
+            { name: "ML Feature Store", type: "ai", phase: 5, status: "new", icon: "🔬",
+              about: "Centralized storage for curated ML features serving training pipelines and real-time inference models.",
+              separate: "Feature engineering requires versioned, consistent data snapshots separate from transactional systems.",
+              problems: "Eliminates training-serving skew, enables feature reuse across models, and maintains historical feature lineage." },
+            { name: "Compliance Engine", type: "operations", phase: 5, status: "new", icon: "⚖️",
+              about: "GDPR deletion orchestration, data residency enforcement, and audit log generation for legal requests.",
+              separate: "Legal compliance evolves independently; embedding it across services creates update nightmares and bugs.",
+              problems: "Automates right-to-be-forgotten, enforces geographic data boundaries, and produces legally admissible audit trails." },
+            { name: "Multi-tenant Sharding", type: "data", phase: 5, status: "new", icon: "🏗️",
+              about: "Tenant-aware database partitioning isolating enterprise data while optimizing resource pooling across customers.",
+              separate: "Tenant isolation is a security primitive; mixing it with general sharding logic risks cross-tenant data leaks.",
+              problems: "Guarantees enterprise data isolation, enables per-tenant backup policies, and supports custom retention rules." },
+
+            // Phase VI
+            { name: "Edge Compute Mesh", type: "edge", phase: 6, status: "new", icon: "📡",
+              about: "Local processing nodes at ISP edges handling encryption, compression, and AI inference before cloud transit.",
+              separate: "Edge nodes run in untrusted environments; separating them limits blast radius of physical compromise.",
+              problems: "Reduces cloud bandwidth by 60%, enables offline-first features, and delivers sub-50ms latency for critical paths." },
+            { name: "Global Anycast LB", type: "edge", phase: 6, status: "new", icon: "🌍",
+              about: "BGP anycast-based global load balancing with automatic DDoS mitigation and route optimization.",
+              separate: "Network-layer routing is infrastructure-specific; keeping it separate allows ISP-level partnerships.",
+              problems: "Routes users to healthy nearest PoPs, absorbs volumetric attacks, and maintains availability during regional outages." },
+            { name: "Predictive Preload", type: "ai", phase: 6, status: "new", icon: "🔮",
+              about: "LLM-based message and media anticipation preloading content before user explicit request based on context.",
+              separate: "Predictive workloads are speculative and bursty; they must not contend with guaranteed delivery resources.",
+              problems: "Perceived latency drops to zero, optimizes bandwidth during idle periods, and enables proactive smart replies." },
+            { name: "Self-Healing Infra", type: "operations", phase: 6, status: "new", icon: "🩹",
+              about: "Chaos engineering, automated remediation, and circuit-breaker orchestration reducing human intervention.",
+              separate: "Autonomous decisions require high-level system-wide context unavailable to individual microservices.",
+              problems: "Reduces MTTR by 90%, prevents cascade failures via automatic isolation, and validates resilience continuously." },
+            { name: "Cross-App Bridge", type: "platform", phase: 6, status: "new", icon: "🔗",
+              about: "Interoperability layer connecting WhatsApp with Instagram, Messenger, and third-party messaging protocols.",
+              separate: "Cross-platform logic involves external API contracts; isolating it prevents partner changes from destabilizing core chat.",
+              problems: "Enables unified messaging across Meta apps, supports regulatory interoperability mandates, and abstracts protocol differences." },
+            { name: "Quantum-Safe Crypto", type: "platform", phase: 6, status: "new", icon: "🔐",
+              about: "Post-quantum key exchange algorithms and hybrid classical-quantum encryption for future-proof confidentiality.",
+              separate: "Cryptographic migration is slow and sensitive; parallel implementation allows gradual rollout without breaking legacy.",
+              problems: "Protects against harvest-now-decrypt-later attacks, ensures decade-long message secrecy, and satisfies government standards." },
+            { name: "Planetary Consistency", type: "data", phase: 6, status: "new", icon: "🪐",
+              about: "CRDT-based conflict-free replicated data types enabling simultaneous multi-region writes without global locks.",
+              separate: "Consensus algorithms are specialized distributed systems problems; mixing them with business logic causes bugs.",
+              problems: "Eliminates cross-region latency on writes, supports offline editing, and guarantees eventual consistency mathematically." },
+            { name: "Green Compute", type: "operations", phase: 6, status: "new", icon: "🌱",
+              about: "Carbon-aware workload scheduling shifting batch jobs to regions with renewable energy availability.",
+              separate: "Sustainability policies change frequently; isolating scheduling logic allows rapid adaptation to new climate goals.",
+              problems: "Reduces carbon footprint by 40%, meets ESG commitments, and optimizes energy costs without impacting user SLAs." },
+            { name: "Deepfake Detection", type: "ai", phase: 6, status: "new", icon: "🎭",
+              about: "Real-time media authenticity verification using multimodal AI detecting synthetic audio, video, and images.",
+              separate: "Deepfake scanning is computationally intensive and must not delay message delivery for genuine content.",
+              problems: "Prevents misinformation spread, protects user trust in media, and flags manipulated content before viral propagation." },
+            { name: "AR Comm Layer", type: "business", phase: 6, status: "new", icon: "🥽",
+              about: "Spatial messaging, holographic presence, and 3D avatar rendering for next-generation communication interfaces.",
+              separate: "AR requires specialized rendering pipelines and spatial databases incompatible with traditional chat architectures.",
+              problems: "Enables immersive remote collaboration, integrates with wearable devices, and renders spatial context for messages." }
+        ];
+
+        let currentPhase = 1;
+        let carouselPosition = 0;
+
+        function init() {
+            renderPhaseNav();
+            renderPhase(1);
         }
 
-        function openModal(title, type, phase, what, why, problems) {
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-subtitle').textContent = type.charAt(0).toUpperCase() + type.slice(1) + ' Service · ' + phase;
-            document.getElementById('modal-what').textContent = what;
-            document.getElementById('modal-why').textContent = why;
-            document.getElementById('modal-problems').textContent = problems;
-            document.getElementById('modal').classList.add('active');
-            document.body.style.overflow = 'hidden';
+        function renderPhaseNav() {
+            const nav = document.getElementById('phaseNav');
+            nav.innerHTML = phases.map(p => `
+                <button class="phase-btn ${p.id === 1 ? 'active' : ''}" data-phase="${p.id}" onclick="selectPhase(${p.id})">
+                    <span class="phase-label">${p.name}</span>
+                    <span class="phase-range">${p.range}</span>
+                </button>
+            `).join('');
         }
 
-        function closeModal(e) {
-            if (e && e.target !== document.getElementById('modal')) return;
-            document.getElementById('modal').classList.remove('active');
-            document.body.style.overflow = '';
+        function selectPhase(phaseId) {
+            currentPhase = phaseId;
+            carouselPosition = 0;
+
+            document.querySelectorAll('.phase-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.phase) === phaseId);
+            });
+
+            renderPhase(phaseId);
         }
 
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeModal();
+        function renderPhase(phaseId) {
+            const phase = phases.find(p => p.id === phaseId);
+            const info = document.getElementById('phaseInfo');
+            const stats = document.getElementById('statsBar');
+            const track = document.getElementById('carouselTrack');
+
+            info.innerHTML = `
+                <h2>${phase.name}: ${phase.range} Users — ${phase.title}</h2>
+                <p>${phase.desc}</p>
+            `;
+
+            stats.innerHTML = `
+                <div class="stat-card"><div class="stat-number">${phase.stats.components}</div><div class="stat-label">Total Components</div></div>
+                <div class="stat-card"><div class="stat-number">${phase.stats.newServices}</div><div class="stat-label">New in This Phase</div></div>
+                <div class="stat-card"><div class="stat-number">${phase.stats.regions}</div><div class="stat-label">Regions</div></div>
+                <div class="stat-card"><div class="stat-number">${phase.stats.dbNodes}</div><div class="stat-label">DB Nodes</div></div>
+            `;
+
+            const phaseComponents = components.filter(c => c.phase === phaseId);
+            const prevComponents = components.filter(c => c.phase < phaseId);
+
+            let allCards = [];
+
+            // New components
+            phaseComponents.forEach(c => {
+                allCards.push(renderCard(c, 'new'));
+            });
+
+            // Carried over / scaled components from previous phases (show last 2 phases for context)
+            const recentPrev = prevComponents.filter(c => c.phase >= phaseId - 1);
+            recentPrev.forEach(c => {
+                allCards.push(renderCard(c, 'carried'));
+            });
+
+            track.innerHTML = allCards.join('');
+            track.style.transform = `translateX(0px)`;
+        }
+
+        function renderCard(comp, displayStatus) {
+            const t = typeConfig[comp.type];
+            const statusBadge = displayStatus === 'new' 
+                ? `<span class="badge badge-new">New in Phase ${comp.phase}</span>`
+                : `<span class="badge badge-core">Since Phase ${comp.phase}</span>`;
+
+            const accentColor = t.color;
+            const lightBg = t.bg;
+
+            return `
+                <div class="component-card" style="--card-accent: ${accentColor}; --card-accent-light: ${lightBg}">
+                    <div class="card-header">
+                        <div class="component-name">${comp.icon} ${comp.name}</div>
+                        <div class="badges">
+                            <span class="badge badge-type" style="--badge-bg: ${lightBg}; --badge-color: ${accentColor}; background: ${lightBg}; color: ${accentColor}">${t.label}</span>
+                            ${statusBadge}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="detail-section">
+                            <div class="detail-label">
+                                <span>❓ What</span>
+                                <span class="word-count">${comp.about.split(' ').length} words</span>
+                            </div>
+                            <div class="detail-text">${comp.about}</div>
+                        </div>
+                        <div class="detail-section">
+                            <div class="detail-label">
+                                <span>🔍 Why Separate</span>
+                                <span class="word-count">${comp.separate.split(' ').length} words</span>
+                            </div>
+                            <div class="detail-text">${comp.separate}</div>
+                        </div>
+                        <div class="detail-section">
+                            <div class="detail-label">
+                                <span>🛠️ Problems Solved</span>
+                                <span class="word-count">${comp.problems.split(' ').length} words</span>
+                            </div>
+                            <div class="detail-text">${comp.problems}</div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <span class="phase-indicator">${displayStatus === 'new' ? '🚀 Introduced' : '⬆️ Active'} in Phase ${comp.phase}</span>
+                        <div class="icon-circle" style="background: ${lightBg}">${comp.icon}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function moveCarousel(direction) {
+            const track = document.getElementById('carouselTrack');
+            const cardWidth = 400;
+            const maxPosition = -(track.children.length - 1) * cardWidth;
+
+            carouselPosition += direction * -cardWidth;
+            carouselPosition = Math.max(maxPosition, Math.min(0, carouselPosition));
+
+            track.style.transform = `translateX(${carouselPosition}px)`;
+        }
+
+        // Touch support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
         });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            if (touchStartX - touchEndX > 50) moveCarousel(1);
+            if (touchEndX - touchStartX > 50) moveCarousel(-1);
+        });
+
+        init();
     </script>
 </body>
 </html>
